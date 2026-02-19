@@ -72,6 +72,17 @@ async function startServer() {
     res.json(settings);
   });
 
+  // Admin Login
+  app.post("/api/admin/login", (req, res) => {
+    const { password } = req.body;
+    // In a real app, use environment variables and hashing
+    if (password === (process.env.ADMIN_PASSWORD || "admin123")) {
+      res.json({ success: true, token: "mock-jwt-token" });
+    } else {
+      res.status(401).json({ error: "invalid_credentials", message: "Senha incorreta." });
+    }
+  });
+
   // Update Settings
   app.post("/api/admin/settings", (req, res) => {
     if (!db) return res.status(500).json({ error: "db_not_connected" });
