@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Ticket, 
-  CheckCircle2, 
-  AlertCircle, 
-  Copy, 
-  ExternalLink, 
-  ArrowRight, 
-  Loader2, 
-  LayoutDashboard, 
-  History, 
+import {
+  Ticket,
+  CheckCircle2,
+  AlertCircle,
+  Copy,
+  ExternalLink,
+  ArrowRight,
+  Loader2,
+  LayoutDashboard,
+  History,
   BarChart3,
   Mail,
   RefreshCw,
@@ -50,7 +50,7 @@ const Header = ({ onAdminClick, onLogoClick }: { onAdminClick: () => void, onLog
       </div>
       <h1 className="text-xl font-bold text-slate-900 tracking-tight">PromoCode</h1>
     </button>
-    <button 
+    <button
       onClick={onAdminClick}
       className="p-2 text-slate-400 hover:text-orange-600 transition-colors rounded-lg hover:bg-orange-50"
     >
@@ -72,17 +72,17 @@ const Footer = ({ setView }: { setView: (v: any) => void }) => (
 
 const FloatingSupport = () => (
   <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-    <a 
-      href="https://wa.me/5500000000000" 
-      target="_blank" 
+    <a
+      href="https://wa.me/5500000000000"
+      target="_blank"
       rel="noopener noreferrer"
       className="w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
       title="Suporte via WhatsApp"
     >
       <Mail size={24} />
     </a>
-    <a 
-      href="mailto:suporte@promocode.com" 
+    <a
+      href="mailto:suporte@promocode.com"
       className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
       title="Suporte via E-mail"
     >
@@ -106,6 +106,8 @@ export default function App() {
   const [codesSearch, setCodesSearch] = useState('');
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [importJobId, setImportJobId] = useState<string | null>(null);
+  const [importProgress, setImportProgress] = useState<{ progress: number; status: string; message: string } | null>(null);
 
   // Fetch settings
   const fetchSettings = async (retries = 3) => {
@@ -201,6 +203,7 @@ export default function App() {
     reader.onload = async (event) => {
       const text = event.target?.result as string;
       setLoading(true);
+      setImportProgress(null);
       try {
         const res = await fetch('/api/admin/upload-csv', {
           method: 'POST',
@@ -209,21 +212,65 @@ export default function App() {
         });
         const data = await res.json();
         if (res.ok) {
-          alert(data.message);
-          if (adminSubView === 'stats') fetchStats();
-          if (adminSubView === 'codes') fetchCodes(codesPage, codesSearch);
+          setImportJobId(data.jobId);
+          setImportProgress({
+            progress: 0,
+            status: 'processing',
+            message: data.message
+          });
+          // Iniciar polling de progresso
+          pollImportStatus(data.jobId);
         } else {
           alert(data.error);
+          setLoading(false);
         }
       } catch (err) {
         alert("Erro ao enviar arquivo.");
-      } finally {
         setLoading(false);
       }
     };
     reader.readAsText(file);
     // Reset input
     e.target.value = '';
+  };
+
+  const pollImportStatus = async (jobId: string) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/admin/import-status/${jobId}`);
+        const data = await res.json();
+        
+        if (data.status === 'completed' || data.status === 'failed') {
+          clearInterval(pollInterval);
+          setLoading(false);
+          setImportProgress({
+            progress: data.progress,
+            status: data.status,
+            message: data.status === 'completed' 
+              ? `Importação concluída! ${data.successfulLines} códigos importados com sucesso.${data.failedLines > 0 ? ` ${data.failedLines} falharam.` : ''}`
+              : `Erro na importação: ${data.errorMessage || 'Erro desconhecido'}`
+          });
+          
+          // Atualizar listas após conclusão
+          setTimeout(() => {
+            if (adminSubView === 'stats') fetchStats();
+            if (adminSubView === 'codes') fetchCodes(codesPage, codesSearch);
+            setImportProgress(null);
+            setImportJobId(null);
+          }, 3000);
+        } else {
+          setImportProgress({
+            progress: data.progress,
+            status: data.status,
+            message: `Processando... ${data.processedLines} de ${data.totalLines} linhas (${data.progress}%)`
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao verificar status:", err);
+        clearInterval(pollInterval);
+        setLoading(false);
+      }
+    }, 1000); // Verifica a cada 1 segundo
   };
 
   const handleRedeem = async (e: React.FormEvent) => {
@@ -237,9 +284,9 @@ export default function App() {
       const res = await fetch('/api/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           code: code.toUpperCase(),
-          captchaToken: captchaVerified ? "mock-token" : null 
+          captchaToken: captchaVerified ? "mock-token" : null
         })
       });
 
@@ -280,15 +327,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
-      <Header 
-        onAdminClick={() => setView(view === 'admin' ? 'redeem' : 'admin')} 
+      <Header
+        onAdminClick={() => setView(view === 'admin' ? 'redeem' : 'admin')}
         onLogoClick={() => setView('redeem')}
       />
 
       <main className="flex-grow flex flex-col items-center justify-center p-6 max-w-4xl mx-auto w-full">
         <AnimatePresence mode="wait">
           {view === 'redeem' ? (
-            <motion.div 
+            <motion.div
               key="redeem"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -304,7 +351,7 @@ export default function App() {
 
                   <form onSubmit={handleRedeem} className="space-y-5">
                     {error && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start space-x-3 text-red-700 text-sm"
@@ -316,7 +363,7 @@ export default function App() {
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Código Promocional</label>
-                      <input 
+                      <input
                         type="text"
                         required
                         disabled={!isStarted || isEnded}
@@ -340,14 +387,14 @@ export default function App() {
                         </button>
                         <span className="text-sm font-medium text-slate-600">Não sou um robô</span>
                       </div>
-                      <img 
-                        src="https://www.gstatic.com/recaptcha/api2/logo_48.png" 
-                        alt="reCAPTCHA" 
+                      <img
+                        src="https://www.gstatic.com/recaptcha/api2/logo_48.png"
+                        alt="reCAPTCHA"
                         className="w-6 h-6 opacity-50"
                       />
                     </div>
 
-                    <button 
+                    <button
                       type="submit"
                       disabled={loading || !captchaVerified || !isStarted || isEnded}
                       className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-200 transition-all flex items-center justify-center space-x-2 active:scale-95"
@@ -368,7 +415,7 @@ export default function App() {
                   </p>
                 </div>
               ) : (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="bg-white p-8 rounded-3xl shadow-xl shadow-green-100/50 border border-green-100 text-center"
@@ -376,16 +423,16 @@ export default function App() {
                   <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2 className="w-10 h-10" />
                   </div>
-                  
+
                   <h2 className="text-2xl font-extrabold text-slate-900">Resgate Concluído!</h2>
                   <p className="text-slate-500 mt-2 mb-6">
                     Seu benefício exclusivo foi liberado com sucesso.
                   </p>
 
                   <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                    <img 
-                      src="https://picsum.photos/seed/reward/600/300" 
-                      alt="Prêmio" 
+                    <img
+                      src="https://picsum.photos/seed/reward/600/300"
+                      alt="Prêmio"
                       className="w-full h-40 object-cover"
                       referrerPolicy="no-referrer"
                     />
@@ -394,9 +441,9 @@ export default function App() {
                   <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Seu Link de Prêmio</p>
                     <p className="text-orange-600 font-bold break-all mb-4">{successData.link}</p>
-                    
+
                     <div className="flex flex-col gap-3">
-                      <a 
+                      <a
                         href={successData.link}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -406,14 +453,14 @@ export default function App() {
                         <span>Acessar Prêmio</span>
                       </a>
                       <div className="grid grid-cols-2 gap-3">
-                        <button 
+                        <button
                           onClick={handleCopy}
                           className="flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3.5 rounded-xl font-bold transition-all shadow-sm"
                         >
                           <Copy size={18} />
                           <span>{copied ? "Copiado!" : "Copiar"}</span>
                         </button>
-                        <a 
+                        <a
                           href={`https://wa.me/?text=${encodeURIComponent(`Olha só o prêmio que eu ganhei: ${successData.link}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -426,7 +473,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => { setSuccessData(null); setCode(''); }}
                     className="text-slate-400 hover:text-slate-600 font-medium text-sm flex items-center justify-center mx-auto transition-colors"
                   >
@@ -436,7 +483,7 @@ export default function App() {
               )}
             </motion.div>
           ) : view === 'help' ? (
-            <motion.div 
+            <motion.div
               key="help"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -458,7 +505,7 @@ export default function App() {
                   <p className="text-slate-600 text-sm">Cada código é único e pode ser utilizado apenas uma única vez.</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setView('redeem')}
                 className="mt-8 text-orange-600 font-bold flex items-center gap-2"
               >
@@ -467,7 +514,7 @@ export default function App() {
               </button>
             </motion.div>
           ) : view === 'privacy' ? (
-            <motion.div 
+            <motion.div
               key="privacy"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -480,7 +527,7 @@ export default function App() {
                 <p>Coletamos apenas as informações necessárias para validar seu código e garantir a segurança da promoção, como seu endereço IP e data de acesso.</p>
                 <p>Seus dados não são compartilhados com terceiros para fins de marketing.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setView('redeem')}
                 className="mt-8 text-orange-600 font-bold flex items-center gap-2"
               >
@@ -489,7 +536,7 @@ export default function App() {
               </button>
             </motion.div>
           ) : view === 'terms' ? (
-            <motion.div 
+            <motion.div
               key="terms"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -503,7 +550,7 @@ export default function App() {
                 <p>2. Tentativas de fraude ou uso indevido do sistema resultarão em bloqueio imediato.</p>
                 <p>3. Os prêmios estão sujeitos à disponibilidade e prazos estabelecidos na administração.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setView('redeem')}
                 className="mt-8 text-orange-600 font-bold flex items-center gap-2"
               >
@@ -512,7 +559,7 @@ export default function App() {
               </button>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="admin"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -526,38 +573,64 @@ export default function App() {
                 </div>
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                   <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm">
-                    <button 
+                    <button
                       onClick={() => setAdminSubView('stats')}
                       className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'stats' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
                       Dashboard
                     </button>
-                    <button 
+                    <button
                       onClick={() => setAdminSubView('codes')}
                       className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'codes' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
                       Lista de Códigos
                     </button>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <label className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
-                      <Upload size={16} />
-                      <span>Lote 1</span>
-                      <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
-                    </label>
-                    <label className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
-                      <Upload size={16} />
-                      <span>Lote 2</span>
-                      <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
-                    </label>
-                    <a 
-                      href="data:text/csv;charset=utf-8,codigo,link" 
-                      download="modelo_codes.csv"
-                      className="px-4 py-2 bg-slate-100 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center gap-2"
-                    >
-                      Modelo CSV
-                    </a>
+
+                  <div className="flex flex-col gap-3">
+                    <div className="flex gap-2">
+                      <label className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+                        <Upload size={16} />
+                        <span>Importar CSV</span>
+                        <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} disabled={loading} />
+                      </label>
+                      <a
+                        href="data:text/csv;charset=utf-8,codigo,link"
+                        download="modelo_codes.csv"
+                        className="px-4 py-2 bg-slate-100 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center gap-2"
+                      >
+                        Modelo CSV
+                      </a>
+                    </div>
+                    
+                    {importProgress && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-bold text-slate-700">
+                            {importProgress.status === 'processing' ? 'Importando...' : 
+                             importProgress.status === 'completed' ? 'Concluído!' : 'Erro'}
+                          </span>
+                          <span className="text-xs font-bold text-slate-500">{importProgress.progress}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2">
+                          <motion.div
+                            className={`h-2.5 rounded-full ${
+                              importProgress.status === 'completed' ? 'bg-green-500' :
+                              importProgress.status === 'failed' ? 'bg-red-500' :
+                              'bg-orange-500'
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${importProgress.progress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-600">{importProgress.message}</p>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -566,7 +639,7 @@ export default function App() {
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Início do Resgate</label>
-                  <input 
+                  <input
                     type="datetime-local"
                     value={settings.start_date}
                     onChange={(e) => setSettings({ ...settings, start_date: e.target.value })}
@@ -575,14 +648,14 @@ export default function App() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Fim do Resgate</label>
-                  <input 
+                  <input
                     type="datetime-local"
                     value={settings.end_date}
                     onChange={(e) => setSettings({ ...settings, end_date: e.target.value })}
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none"
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => updateSettings(settings)}
                   className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors"
                 >
@@ -668,8 +741,8 @@ export default function App() {
                         <Ticket className="text-orange-600" size={20} />
                         Lista de Códigos
                       </h3>
-                      <a 
-                        href="/api/admin/export-redeemed" 
+                      <a
+                        href="/api/admin/export-redeemed"
                         className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-100 hover:bg-green-100 transition-colors"
                       >
                         <Upload size={14} className="rotate-180" />
@@ -677,7 +750,7 @@ export default function App() {
                       </a>
                     </div>
                     <form onSubmit={handleSearch} className="flex w-full md:w-auto gap-2">
-                      <input 
+                      <input
                         type="text"
                         placeholder="Buscar por código ou IP..."
                         value={codesSearch}
@@ -689,7 +762,7 @@ export default function App() {
                       </button>
                     </form>
                   </div>
-                  
+
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
@@ -741,14 +814,14 @@ export default function App() {
                       Página {codesPage} de {codesTotalPages}
                     </p>
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         disabled={codesPage === 1 || loading}
                         onClick={() => setCodesPage(p => p - 1)}
                         className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
                       >
                         Anterior
                       </button>
-                      <button 
+                      <button
                         disabled={codesPage === codesTotalPages || loading}
                         onClick={() => setCodesPage(p => p + 1)}
                         className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"

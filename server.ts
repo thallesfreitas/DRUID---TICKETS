@@ -20,6 +20,13 @@ async function startServer() {
     db = new Database("promo.db");
     console.log("Database connected.");
     
+    // Habilitar WAL mode para melhor concorrência
+    db.pragma("journal_mode = WAL");
+    db.pragma("synchronous = NORMAL");
+    db.pragma("cache_size = -64000"); // 64MB cache
+    db.pragma("temp_store = MEMORY");
+    console.log("WAL mode enabled for better concurrency.");
+    
     db.exec(`
       CREATE TABLE IF NOT EXISTS codes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +48,18 @@ async function startServer() {
         attempts INTEGER DEFAULT 0,
         last_attempt DATETIME,
         blocked_until DATETIME
+      );
+
+      CREATE TABLE IF NOT EXISTS import_jobs (
+        id TEXT PRIMARY KEY,
+        status TEXT DEFAULT 'pending',
+        total_lines INTEGER DEFAULT 0,
+        processed_lines INTEGER DEFAULT 0,
+        successful_lines INTEGER DEFAULT 0,
+        failed_lines INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME,
+        error_message TEXT
       );
 
       -- Default settings if not exist
@@ -255,33 +274,157 @@ async function startServer() {
     res.send(csv);
   });
 
-  // Upload CSV
-  app.post("/api/admin/upload-csv", (req, res) => {
+  // Importação em fila: processa CSV em chunks de 5k
+  const importQueue = new Map<string, { status: string; progress: number }>();
+  
+  async function processImportChunks(jobId: string, lines: string[], chunkSize: number = 5000) {
+    const totalLines = lines.length;
+    const chunks: string[][] = [];
+    
+    // Dividir em chunks de 5k
+    for (let i = 0; i < lines.length; i += chunkSize) {
+      chunks.push(lines.slice(i, i + chunkSize));
+    }
+    
+    const insert = db.prepare("INSERT OR IGNORE INTO codes (code, link) VALUES (?, ?)");
+    let successfulLines = 0;
+    let failedLines = 0;
+    
+    // Atualizar job status
+    db.prepare(`
+      INSERT INTO import_jobs (id, status, total_lines, processed_lines, successful_lines, failed_lines)
+      VALUES (?, 'processing', ?, 0, 0, 0)
+      ON CONFLICT(id) DO UPDATE SET status = 'processing'
+    `).run(jobId, totalLines);
+    
+    try {
+      // Processar cada chunk sequencialmente
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        const transaction = db.transaction((rows: string[]) => {
+          for (const row of rows) {
+            const parts = row.split(",").map((s: string) => s.trim());
+            if (parts.length >= 2) {
+              const [code, link] = parts;
+              if (code && link) {
+                try {
+                  insert.run(code.toUpperCase(), link);
+                  successfulLines++;
+                } catch (err: any) {
+                  // Ignora duplicatas (UNIQUE constraint)
+                  if (!err.message?.includes('UNIQUE constraint')) {
+                    failedLines++;
+                  }
+                }
+              } else {
+                failedLines++;
+              }
+            } else {
+              failedLines++;
+            }
+          }
+        });
+        
+        transaction(chunk);
+        
+        // Atualizar progresso
+        const processedLines = (chunkIndex + 1) * chunkSize;
+        const progress = Math.min((processedLines / totalLines) * 100, 100);
+        
+        db.prepare(`
+          UPDATE import_jobs 
+          SET processed_lines = ?, successful_lines = ?, failed_lines = ?
+          WHERE id = ?
+        `).run(processedLines, successfulLines, failedLines, jobId);
+        
+        importQueue.set(jobId, { 
+          status: 'processing', 
+          progress: Math.round(progress) 
+        });
+        
+        // Pequeno delay entre chunks para não sobrecarregar
+        if (chunkIndex < chunks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Marcar como concluído
+      db.prepare(`
+        UPDATE import_jobs 
+        SET status = 'completed', completed_at = CURRENT_TIMESTAMP,
+            processed_lines = ?, successful_lines = ?, failed_lines = ?
+        WHERE id = ?
+      `).run(totalLines, successfulLines, failedLines, jobId);
+      
+      importQueue.set(jobId, { status: 'completed', progress: 100 });
+      
+    } catch (err) {
+      console.error("Import error:", err);
+      db.prepare(`
+        UPDATE import_jobs 
+        SET status = 'failed', completed_at = CURRENT_TIMESTAMP, error_message = ?
+        WHERE id = ?
+      `).run(String(err), jobId);
+      
+      importQueue.set(jobId, { status: 'failed', progress: 0 });
+    }
+  }
+
+  // Upload CSV - inicia processamento assíncrono
+  app.post("/api/admin/upload-csv", async (req, res) => {
     if (!db) return res.status(500).json({ error: "db_not_connected" });
     const { csvData } = req.body;
     if (!csvData) return res.status(400).json({ error: "Dados do CSV não fornecidos." });
 
-    const lines = csvData.split("\n");
-    const insert = db.prepare("INSERT OR IGNORE INTO codes (code, link) VALUES (?, ?)");
-    
-    let count = 0;
-    const transaction = db.transaction((rows) => {
-      for (const row of rows) {
-        const [code, link] = row.split(",").map((s: string) => s.trim());
-        if (code && link) {
-          insert.run(code.toUpperCase(), link);
-          count++;
-        }
-      }
-    });
-
-    try {
-      transaction(lines);
-      res.json({ success: true, message: `${count} códigos importados com sucesso.` });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Erro ao processar o CSV." });
+    const lines = csvData.split("\n").filter((line: string) => line.trim());
+    if (lines.length === 0) {
+      return res.status(400).json({ error: "CSV vazio ou inválido." });
     }
+
+    // Gerar ID único para o job
+    const jobId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Iniciar processamento em background (não bloqueia resposta)
+    processImportChunks(jobId, lines, 5000).catch(err => {
+      console.error("Background import failed:", err);
+    });
+    
+    // Retornar imediatamente com job ID
+    res.json({ 
+      success: true, 
+      jobId,
+      message: `Importação iniciada. Processando ${lines.length} linhas em chunks de 5k...`,
+      totalLines: lines.length
+    });
+  });
+
+  // Verificar status da importação
+  app.get("/api/admin/import-status/:jobId", (req, res) => {
+    if (!db) return res.status(500).json({ error: "db_not_connected" });
+    const { jobId } = req.params;
+    
+    const job = db.prepare("SELECT * FROM import_jobs WHERE id = ?").get(jobId) as any;
+    
+    if (!job) {
+      return res.status(404).json({ error: "Job não encontrado." });
+    }
+    
+    const progress = job.total_lines > 0 
+      ? Math.round((job.processed_lines / job.total_lines) * 100) 
+      : 0;
+    
+    res.json({
+      jobId: job.id,
+      status: job.status,
+      progress,
+      totalLines: job.total_lines,
+      processedLines: job.processed_lines,
+      successfulLines: job.successful_lines,
+      failedLines: job.failed_lines,
+      createdAt: job.created_at,
+      completedAt: job.completed_at,
+      errorMessage: job.error_message
+    });
   });
 
   // Error handling middleware
