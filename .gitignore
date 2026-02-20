@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.local
+TECHNICAL_SCOPE.md
+./TECHNICAL_SCOPE.md
