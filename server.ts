@@ -3,7 +3,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createApp } from "./api/createApp.ts";
+import { createApp } from "./src/api/createApp.ts";
 
 console.log("Starting server process...");
 
