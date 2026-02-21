@@ -19,8 +19,8 @@ async function startServer() {
   try {
     console.log("Connecting to database...");
     db = createClient({
-      url: process.env.TURSO_DATABASE_URL!,
-      authToken: process.env.TURSO_AUTH_TOKEN!,
+      url: process.env.druidtickets_TURSO_DATABASE_URL!,
+      authToken: process.env.druidtickets_TURSO_AUTH_TOKEN!,
     });
     console.log("Database connected.");
 
