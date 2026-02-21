@@ -239,18 +239,18 @@ export default function App() {
       try {
         const res = await fetch(`/api/admin/import-status/${jobId}`);
         const data = await res.json();
-        
+
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(pollInterval);
           setLoading(false);
           setImportProgress({
             progress: data.progress,
             status: data.status,
-            message: data.status === 'completed' 
+            message: data.status === 'completed'
               ? `Importação concluída! ${data.successfulLines} códigos importados com sucesso.${data.failedLines > 0 ? ` ${data.failedLines} falharam.` : ''}`
               : `Erro na importação: ${data.errorMessage || 'Erro desconhecido'}`
           });
-          
+
           // Atualizar listas após conclusão
           setTimeout(() => {
             if (adminSubView === 'stats') fetchStats();
@@ -602,7 +602,7 @@ export default function App() {
                         Modelo CSV
                       </a>
                     </div>
-                    
+
                     {importProgress && (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
@@ -611,18 +611,17 @@ export default function App() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-bold text-slate-700">
-                            {importProgress.status === 'processing' ? 'Importando...' : 
-                             importProgress.status === 'completed' ? 'Concluído!' : 'Erro'}
+                            {importProgress.status === 'processing' ? 'Importando...' :
+                              importProgress.status === 'completed' ? 'Concluído!' : 'Erro'}
                           </span>
                           <span className="text-xs font-bold text-slate-500">{importProgress.progress}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2">
                           <motion.div
-                            className={`h-2.5 rounded-full ${
-                              importProgress.status === 'completed' ? 'bg-green-500' :
+                            className={`h-2.5 rounded-full ${importProgress.status === 'completed' ? 'bg-green-500' :
                               importProgress.status === 'failed' ? 'bg-red-500' :
-                              'bg-orange-500'
-                            }`}
+                                'bg-orange-500'
+                              }`}
                             initial={{ width: 0 }}
                             animate={{ width: `${importProgress.progress}%` }}
                             transition={{ duration: 0.3 }}
