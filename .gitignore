@@ -9,3 +9,6 @@ coverage/
 .local
 TECHNICAL_SCOPE.md
 ./TECHNICAL_SCOPE.mdail
+.vercel
+promo.db
+TECHNICAL_SCOPE.md
