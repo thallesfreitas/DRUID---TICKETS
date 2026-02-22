@@ -1,0 +1,107 @@
+services:
+  # ===== Aplicação Node.js =====
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: promocode-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      # Database: Turso (remote) ou SQLite local (file:/app/data/promo.db)
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-file:/app/data/promo.db}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+      # Admin password
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      # Redis
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Volume para logs
+      - ./logs:/app/logs
+      # Volume para uploads temporários
+      - ./uploads:/app/uploads
+      # Volume para SQLite (persistência do banco em modo file:)
+      - sqlite-data:/app/data
+    networks:
+      - promocode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===== Redis para Filas/Cache =====
+  redis:
+    image: redis:7-alpine
+    container_name: promocode-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      # Volume para persistência de dados
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    networks:
+      - promocode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+
+  # ===== Postgres (Opcional, para substituir SQLite em produção) =====
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: promocode-postgres
+  #   environment:
+  #     - POSTGRES_DB=${DB_NAME:-promocode}
+  #     - POSTGRES_USER=${DB_USER:-postgres}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - promocode-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # ===== PgAdmin (Opcional, para gerenciar Postgres) =====
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: promocode-pgadmin
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@example.com}
+  #     - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+  #   ports:
+  #     - "5050:80"
+  #   networks:
+  #     - promocode-network
+  #   depends_on:
+  #     - postgres
+  #   restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local
+  sqlite-data:
+    driver: local
+  # postgres-data:
+  #   driver: local
+
+networks:
+  promocode-network:
+    driver: bridge
