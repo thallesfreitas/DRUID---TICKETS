@@ -9,7 +9,13 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "start": "node server.ts"
+    "start": "tsx server.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:backend": "vitest tests/backend",
+    "test:frontend": "vitest tests/frontend"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -20,18 +26,28 @@
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "vercel": "^50.22.1",
-    "vite": "^6.2.0"
-  },
-  "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "^22.14.0",
-    "autoprefixer": "^10.4.21",
-    "tailwindcss": "^4.1.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vercel": "^41.0.2",
+    "vite": "^6.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "autoprefixer": "^10.4.21",
+    "happy-dom": "^20.7.0",
+    "msw": "^2.0.11",
+    "supertest": "^6.3.3",
+    "tailwindcss": "^4.1.14",
+    "vite": "^6.2.0",
+    "vitest": "^4.0.18"
   }
 }

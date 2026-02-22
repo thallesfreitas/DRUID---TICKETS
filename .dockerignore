@@ -1,0 +1,67 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# package-lock.json deve ser incluído para npm ci no Docker
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+.DS_Store
+.sublime-project
+.sublime-workspace
+*.iml
+
+# Build output
+dist
+build
+.next
+out
+
+# Testing
+coverage
+.nyc_output
+*.lcov
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Misc
+.cache
+.eslintcache
+.prettierignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Development
+.claude
+uploads
