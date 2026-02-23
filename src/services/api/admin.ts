@@ -3,11 +3,25 @@
  */
 
 import { ApiClient } from './client';
-import { Settings, PaginatedCodes, CsvUploadResponse, ImportStatusResponse } from '../../types/api';
+import { Settings, Stats, PaginatedCodes, CsvUploadResponse, ImportStatusResponse } from '../../types/api';
 import { API_PATHS } from '../../constants/api';
 
 export class AdminService {
   constructor(private client: ApiClient) {}
+
+  /**
+   * Obtém configurações (início/fim do resgate)
+   */
+  async getSettings(): Promise<Settings> {
+    return this.client.get<Settings>(API_PATHS.PUBLIC.SETTINGS);
+  }
+
+  /**
+   * Obtém estatísticas em tempo real (total, utilizados, disponíveis, últimos 10 resgates)
+   */
+  async getStats(): Promise<Stats> {
+    return this.client.get<Stats>(API_PATHS.PUBLIC.STATS);
+  }
 
   /**
    * Faz login admin

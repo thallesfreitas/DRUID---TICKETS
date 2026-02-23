@@ -4,7 +4,6 @@
  * Single Responsibility: UI Only
  */
 
-import React from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Copy, ExternalLink, Mail } from 'lucide-react';
 

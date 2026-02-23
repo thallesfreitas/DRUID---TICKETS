@@ -14,6 +14,9 @@ export class ApiClient {
     path: string,
     body?: any
   ): Promise<T> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.FETCH);
+
     try {
       const response = await fetch(path, {
         method,
@@ -21,8 +24,10 @@ export class ApiClient {
           'Content-Type': 'application/json',
         },
         body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (!response.ok) {
@@ -32,10 +37,13 @@ export class ApiClient {
 
       return data as T;
     } catch (error) {
+      clearTimeout(timeoutId);
       if (error instanceof ApiError) {
         throw error;
       }
-
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('Tempo esgotado. Verifique se o servidor está em execução.', undefined);
+      }
       throw new ApiError(
         'Erro de conexão. Tente novamente.',
         undefined

@@ -1,32 +1,43 @@
 /**
- * RedeemView Component
- * Container for the redeem feature
- * Handles state and logic delegation
- * Renders either RedeemForm or RedeemSuccess based on state
+ * RedeemView - Container do resgate com reCAPTCHA
+ * Suporta v2 (checkbox) e Enterprise (invisível) via RECAPTCHA_MODE
  */
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { useRecaptchaV2 } from '@/hooks/useRecaptchaV2';
+import { useRecaptchaEnterprise } from '@/hooks/useRecaptchaEnterprise';
 import { useRedeem } from '@/hooks/useRedeem';
 import { RedeemForm } from '@/components/redeem/RedeemForm';
 import { RedeemSuccess } from '@/components/redeem/RedeemSuccess';
 
+const RECAPTCHA_MODE = process.env.RECAPTCHA_MODE || 'v2';
+const isEnterprise = RECAPTCHA_MODE === 'enterprise';
+
 export function RedeemView() {
-  const redeem = useRedeem();
+  // Carrega o hook correto baseado no modo
+  const v2 = useRecaptchaV2();
+  const enterprise = useRecaptchaEnterprise();
+
+  // Função para obter token: v2 já tem, enterprise precisa executar
+  const getCaptchaToken = async (): Promise<string> => {
+    if (isEnterprise) {
+      return enterprise.executeRecaptcha();
+    }
+    return v2.token;
+  };
+
+  const redeem = useRedeem({ getCaptchaToken });
   const [copied, setCopied] = useState(false);
 
-  // Date validation
   const isStarted = !redeem.settings?.start_date || new Date(redeem.settings.start_date) <= new Date();
   const isEnded = redeem.settings?.end_date && new Date(redeem.settings.end_date) < new Date();
 
-  // Handle form submission
   const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!redeem.captchaVerified) return;
     await redeem.handleRedeem(e);
   };
 
-  // Handle copy to clipboard
   const handleCopy = () => {
     if (redeem.successData?.link) {
       navigator.clipboard.writeText(redeem.successData.link);
@@ -35,7 +46,6 @@ export function RedeemView() {
     }
   };
 
-  // Toggle between form and success states
   if (redeem.successData) {
     return (
       <motion.div
@@ -67,14 +77,18 @@ export function RedeemView() {
         code={redeem.code}
         loading={redeem.loading}
         error={redeem.error}
-        captchaVerified={redeem.captchaVerified}
         isStarted={isStarted}
         isEnded={isEnded}
         startDate={redeem.settings?.start_date}
         onSubmit={handleRedeem}
         onChange={redeem.setCode}
-        onCaptchaChange={() => redeem.setCaptchaVerified(!redeem.captchaVerified)}
+        recaptchaMode={RECAPTCHA_MODE}
+        recaptchaReady={isEnterprise ? enterprise.ready : v2.ready}
+        recaptchaToken={isEnterprise ? '' : v2.token}
+        onRecaptchaRender={isEnterprise ? undefined : v2.renderWidget}
       />
     </motion.div>
   );
 }
+
+export { RedeemView as RedeemViewOrWithRecaptcha };

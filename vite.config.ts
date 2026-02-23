@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.RECAPTCHA_SITE_KEY': JSON.stringify(env.RECAPTCHA_SITE_KEY),
+      'process.env.RECAPTCHA_MODE': JSON.stringify(env.RECAPTCHA_MODE || 'v2'),
     },
     resolve: {
       alias: {
@@ -19,13 +21,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
-      proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
-          secure: false,
-        },
+      watch: {
+        usePolling: true,
       },
     },
   };

@@ -10,6 +10,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { usePolling } from '@/hooks/usePolling';
 import { AdminService } from '@/services/api/admin';
 import { apiClient } from '@/services/api/client';
+import { API_DEFAULTS } from '@/constants/api';
 import { ImportStatusResponse, AdminSubViewType } from '@/types/api';
 import { Loader2, BarChart3, CheckCircle2, RefreshCw, History, Ticket, Upload, ExternalLink, ChevronRight } from 'lucide-react';
 
@@ -93,21 +94,19 @@ export function AdminView({ onBack }: AdminViewProps) {
           <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm">
             <button
               onClick={() => setAdminSubView('stats' as AdminSubViewType)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                adminSubView === 'stats'
-                  ? 'bg-orange-600 text-white shadow-md'
-                  : 'text-slate-500 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'stats'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-50'
+                }`}
             >
               Dashboard
             </button>
             <button
               onClick={() => setAdminSubView('codes' as AdminSubViewType)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                adminSubView === 'codes'
-                  ? 'bg-orange-600 text-white shadow-md'
-                  : 'text-slate-500 hover:bg-slate-50'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'codes'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-50'
+                }`}
             >
               Lista de Códigos
             </button>
@@ -148,8 +147,8 @@ export function AdminView({ onBack }: AdminViewProps) {
                     {importStatus.status === 'processing'
                       ? 'Importando...'
                       : importStatus.status === 'completed'
-                      ? 'Concluído!'
-                      : 'Erro'}
+                        ? 'Concluído!'
+                        : 'Erro'}
                   </span>
                   <span className="text-xs font-bold text-slate-500">
                     {importStatus.progress}%
@@ -157,13 +156,12 @@ export function AdminView({ onBack }: AdminViewProps) {
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2">
                   <motion.div
-                    className={`h-2.5 rounded-full ${
-                      importStatus.status === 'completed'
-                        ? 'bg-green-500'
-                        : importStatus.status === 'failed'
+                    className={`h-2.5 rounded-full ${importStatus.status === 'completed'
+                      ? 'bg-green-500'
+                      : importStatus.status === 'failed'
                         ? 'bg-red-500'
                         : 'bg-orange-500'
-                    }`}
+                      }`}
                     initial={{ width: 0 }}
                     animate={{ width: `${importStatus.progress}%` }}
                     transition={{ duration: 0.3 }}
@@ -173,10 +171,9 @@ export function AdminView({ onBack }: AdminViewProps) {
                   {importStatus.status === 'processing'
                     ? `Processando... ${importStatus.processedLines} de ${importStatus.totalLines} linhas`
                     : importStatus.status === 'completed'
-                    ? `Importação concluída! ${importStatus.successfulLines} códigos importados.${
-                        importStatus.failedLines > 0 ? ` ${importStatus.failedLines} falharam.` : ''
+                      ? `Importação concluída! ${importStatus.successfulLines} códigos importados.${importStatus.failedLines > 0 ? ` ${importStatus.failedLines} falharam.` : ''
                       }`
-                    : `Erro: ${importStatus.errorMessage || 'Desconhecido'}`}
+                      : `Erro: ${importStatus.errorMessage || 'Desconhecido'}`}
                 </p>
               </motion.div>
             )}
@@ -229,7 +226,12 @@ export function AdminView({ onBack }: AdminViewProps) {
       {/* Content based on subview */}
       {adminSubView === 'stats' ? (
         <>
-          {admin.stats ? (
+          {admin.statsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Carregando estatísticas...</p>
+            </div>
+          ) : admin.stats ? (
             <>
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -303,8 +305,18 @@ export function AdminView({ onBack }: AdminViewProps) {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-              <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
-              <p className="text-slate-500 font-medium">Carregando estatísticas...</p>
+              <p className="text-slate-600 font-medium mb-2">
+                {admin.statsError || 'Não foi possível carregar as estatísticas.'}
+              </p>
+              <p className="text-slate-400 text-sm mb-4">Verifique se o servidor está em execução e tente novamente.</p>
+              <button
+                type="button"
+                onClick={() => admin.fetchStats()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-bold rounded-xl hover:bg-orange-700 transition-colors"
+              >
+                <RefreshCw size={16} />
+                Tentar novamente
+              </button>
             </div>
           )}
         </>
@@ -401,9 +413,10 @@ export function AdminView({ onBack }: AdminViewProps) {
             </div>
           )}
 
-          <div className="p-6 border-t border-slate-100 flex justify-between items-center bg-slate-50">
+          <div className="p-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2 bg-slate-50">
             <p className="text-xs text-slate-400 font-medium">
               Página {admin.codesPage} de {admin.codesList?.totalPages || 1}
+              <span className="text-slate-300 ml-1">· {API_DEFAULTS.CODES_PAGE_SIZE} itens por página</span>
             </p>
             <div className="flex gap-2">
               <button

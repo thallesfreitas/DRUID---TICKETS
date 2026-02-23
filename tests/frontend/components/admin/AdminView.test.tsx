@@ -38,6 +38,8 @@ describe('AdminView Component', () => {
         { code: 'PROMO002', ip_address: '192.168.1.1', used_at: '2024-01-15 10:30' }
       ]
     },
+    statsLoading: false,
+    statsError: null,
     currentPage: 1,
     totalPages: 5,
     searchQuery: '',

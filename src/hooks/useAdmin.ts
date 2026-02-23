@@ -28,6 +28,7 @@ export interface UseAdminState {
   // Stats
   stats: any;
   statsLoading: boolean;
+  statsError: string | null;
   fetchStats: () => Promise<void>;
 
   // CSV Upload
@@ -67,6 +68,7 @@ export function useAdmin(): UseAdminState {
   const {
     data: stats,
     loading: statsLoading,
+    error: statsError,
     refetch: refetchStats,
   } = useFetch(() => adminService.getStats(), [], false);
 
@@ -125,6 +127,7 @@ export function useAdmin(): UseAdminState {
     fetchCodes,
     stats,
     statsLoading,
+    statsError,
     fetchStats,
     uploadCsv,
     importProgress,

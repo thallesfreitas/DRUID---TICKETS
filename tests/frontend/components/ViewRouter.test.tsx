@@ -10,9 +10,9 @@ import userEvent from '@testing-library/user-event';
 import { ViewRouter } from '@/components/ViewRouter';
 import type { ViewType } from '@/types/api';
 
-// Mock view components
+// Mock view components (ViewRouter uses RedeemViewOrWithRecaptcha)
 vi.mock('@/components/views/RedeemView', () => ({
-  RedeemView: () => <div data-testid="redeem-view">Redeem View</div>
+  RedeemViewOrWithRecaptcha: () => <div data-testid="redeem-view">Redeem View</div>
 }));
 
 vi.mock('@/components/views/AdminView', () => ({

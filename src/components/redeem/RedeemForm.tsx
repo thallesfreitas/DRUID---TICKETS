@@ -1,39 +1,59 @@
 /**
  * RedeemForm Component
  * Responsible for rendering the code redemption form
- * Single Responsibility: UI Only
+ * Suporta reCAPTCHA v2 (checkbox) e Enterprise (invisível)
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { AlertCircle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 
 interface RedeemFormProps {
   code: string;
   loading: boolean;
   error: string | null;
-  captchaVerified: boolean;
   isStarted: boolean;
   isEnded: boolean;
   startDate?: string;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (code: string) => void;
-  onCaptchaChange: () => void;
+  recaptchaMode: string;
+  recaptchaReady: boolean;
+  recaptchaToken: string;        // token do v2 (vazio no enterprise)
+  onRecaptchaRender?: (containerId: string) => void; // só v2
 }
 
 export function RedeemForm({
   code,
   loading,
   error,
-  captchaVerified,
   isStarted,
   isEnded,
   onSubmit,
   onChange,
-  onCaptchaChange,
   startDate,
+  recaptchaMode,
+  recaptchaReady,
+  recaptchaToken,
+  onRecaptchaRender,
 }: RedeemFormProps) {
+  const renderedRef = useRef(false);
+  const isEnterprise = recaptchaMode === 'enterprise';
+
+  // Renderizar widget v2 quando pronto
+  useEffect(() => {
+    if (!isEnterprise && recaptchaReady && !renderedRef.current && onRecaptchaRender) {
+      renderedRef.current = true;
+      onRecaptchaRender('recaptcha-container');
+    }
+  }, [recaptchaReady, onRecaptchaRender, isEnterprise]);
+
   const isDisabled = !isStarted || isEnded;
+
+  // Enterprise: basta estar ready; v2: precisa do token
+  const isSubmitDisabled = isEnterprise
+    ? loading || isDisabled || !recaptchaReady
+    : loading || isDisabled || !recaptchaToken;
 
   const getButtonText = () => {
     if (isEnded) return 'RESGATES ENCERRADOS';
@@ -83,34 +103,24 @@ export function RedeemForm({
           />
         </div>
 
-        {/* reCAPTCHA Mock */}
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              disabled={isDisabled}
-              onClick={onCaptchaChange}
-              className={`w-6 h-6 rounded border-2 transition-all flex items-center justify-center ${
-                captchaVerified
-                  ? 'bg-orange-600 border-orange-600'
-                  : 'bg-white border-slate-300'
-              } disabled:opacity-50`}
-            >
-              {captchaVerified && <CheckCircle2 className="text-white w-4 h-4" />}
-            </button>
-            <span className="text-sm font-medium text-slate-600">Não sou um robô</span>
+        {/* reCAPTCHA v2 - Widget "Não sou um robô" (só aparece no modo v2) */}
+        {!isEnterprise && (
+          <div className="flex items-center justify-center">
+            <div id="recaptcha-container"></div>
           </div>
-          <img
-            src="https://www.gstatic.com/recaptcha/api2/logo_48.png"
-            alt="reCAPTCHA"
-            className="w-6 h-6 opacity-50"
-          />
-        </div>
+        )}
+
+        {/* Enterprise - texto discreto */}
+        {isEnterprise && (
+          <p className="text-[11px] text-center text-slate-400">
+            Protegido pelo reCAPTCHA Enterprise do Google.
+          </p>
+        )}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || !captchaVerified || isDisabled}
+          disabled={isSubmitDisabled}
           className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-200 transition-all flex items-center justify-center space-x-2 active:scale-95"
         >
           {loading ? (

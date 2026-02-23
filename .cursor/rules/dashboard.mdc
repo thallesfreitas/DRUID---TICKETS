@@ -1,0 +1,35 @@
+---
+description: Regras do Dashboard de Estatísticas (admin) – métricas em tempo real e histórico de resgates
+globs: src/components/views/AdminView.tsx,**/admin/**/*.tsx,src/hooks/useAdmin.ts,src/services/api/admin.ts
+alwaysApply: false
+---
+
+# Dashboard de Estatísticas
+
+O dashboard administrativo deve seguir estas regras.
+
+## Métricas em tempo real
+
+Exibir sempre três indicadores:
+
+1. **Total de códigos cadastrados** – quantidade total de códigos na base.
+2. **Códigos utilizados** – quantidade de códigos já resgatados (`is_used = 1`).
+3. **Códigos disponíveis** – total menos utilizados (disponíveis para resgate).
+
+Fonte: API `GET /api/stats` (ou equivalente admin). Atualizar ao entrar na aba Dashboard e após ações que alterem códigos (ex.: importação CSV).
+
+## Histórico dos últimos 10 resgates
+
+Listar exatamente os **últimos 10 resgates**, em ordem decrescente de data (mais recente primeiro). Para cada item exibir:
+
+- **Código resgatado** – valor do código.
+- **Endereço IP** – IP de onde foi feito o resgate.
+- **Data e hora do resgate** – formato legível (ex.: locale do usuário).
+
+Fonte: array `recent` da resposta de `GET /api/stats`, limitado a 10 no backend. Campos: `code`, `ip_address`, `used_at`.
+
+## Comportamento
+
+- Estado de carregamento enquanto busca stats; mensagem clara quando não houver resgates.
+- Não inventar rotas ou campos; usar os contratos existentes da API (Stats, Settings).
+- Manter nomenclatura em português na UI: "Total de Códigos", "Resgates Realizados", "Disponíveis", "Resgates Recentes".

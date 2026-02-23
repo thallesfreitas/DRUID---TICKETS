@@ -11,8 +11,9 @@ import { RedeemService } from '../services/redeemService';
 import { RedeemSchema } from '../validators';
 import { asyncHandler, errorHandler } from '../middleware/errorHandler';
 import { AppError } from '../types';
-import { HTTP_STATUS } from '../constants/api';
-import { ENDPOINT_PATHS } from '../constants/api';
+import { HTTP_STATUS, ERROR_CODES } from '../constants/api';
+import { ERROR_MESSAGES } from '../constants/messages';
+import { verifyRecaptcha } from '../services/recaptchaService';
 
 export function createPublicRoutes(
   codeService: CodeService,
@@ -53,6 +54,15 @@ export function createPublicRoutes(
     asyncHandler(async (req, res) => {
       const { code, captchaToken } = RedeemSchema.parse(req.body);
       const ip = extractIp(req);
+
+      const captchaOk = await verifyRecaptcha(captchaToken, ip);
+      if (!captchaOk) {
+        throw new AppError(
+          ERROR_MESSAGES.CAPTCHA_REQUIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.CAPTCHA_REQUIRED
+        );
+      }
 
       const result = await redeemService.redeem(code, ip);
       res.json(result);

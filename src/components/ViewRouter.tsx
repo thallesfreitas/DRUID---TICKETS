@@ -4,10 +4,9 @@
  * Single Responsibility: View switching logic
  */
 
-import React from 'react';
 import { AnimatePresence } from 'motion/react';
 import { ViewType } from '@/types/api';
-import { RedeemView } from './views/RedeemView';
+import { RedeemViewOrWithRecaptcha } from './views/RedeemView';
 import { HelpView } from './views/HelpView';
 import { PrivacyView } from './views/PrivacyView';
 import { TermsView } from './views/TermsView';
@@ -23,7 +22,7 @@ export function ViewRouter({ view, setView }: ViewRouterProps) {
 
   return (
     <AnimatePresence mode="wait">
-      {view === 'redeem' && <RedeemView key="redeem" />}
+      {view === 'redeem' && <RedeemViewOrWithRecaptcha key="redeem" />}
       {view === 'help' && <HelpView key="help" onBack={handleBack} />}
       {view === 'privacy' && <PrivacyView key="privacy" onBack={handleBack} />}
       {view === 'terms' && <TermsView key="terms" onBack={handleBack} />}

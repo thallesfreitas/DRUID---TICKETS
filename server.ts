@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import http from "http";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -15,14 +16,20 @@ async function startServer() {
   const PORT = 3000;
   const { app } = await createApp();
 
+  // Criar servidor HTTP manualmente para compartilhar com Vite HMR
+  const httpServer = http.createServer(app);
+
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting Vite in middleware mode...");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: { server: httpServer },
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
-    console.log("Vite middleware loaded.");
+    console.log("Vite middleware loaded with HMR.");
   } else {
     app.use(express.static(path.join(__dirname, "dist")));
     app.get("*", (req, res) => {
@@ -30,7 +37,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }

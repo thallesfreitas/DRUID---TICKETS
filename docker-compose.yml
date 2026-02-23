@@ -1,5 +1,5 @@
 services:
-  # ===== Aplicação Node.js =====
+  # ===== Aplicação Node.js (Desenvolvimento) =====
   app:
     build:
       context: .
@@ -8,34 +8,43 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=development
       - PORT=3000
-      # Database: Turso (remote) ou SQLite local (file:/app/data/promo.db)
+      # Database
       - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-file:/app/data/promo.db}
       - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
-      # Admin password
+      # Admin
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       # Redis
       - REDIS_URL=redis://redis:6379/0
+      # HMR (Hot Module Replacement)
+      - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
+      - VITE_HMR_PORT=${VITE_HMR_PORT:-3000}
+      # reCAPTCHA (v2 ou enterprise, controlado por RECAPTCHA_MODE)
+      - RECAPTCHA_MODE=${RECAPTCHA_MODE:-v2}
+      - RECAPTCHA_SITE_KEY=${RECAPTCHA_SITE_KEY:-}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY:-}
+      - RECAPTCHA_PROJECT_ID=${RECAPTCHA_PROJECT_ID:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
     depends_on:
       redis:
         condition: service_healthy
     volumes:
-      # Volume para logs
+      # Hot-reload: monitora mudanças no código
+      - .:/app
+      - /app/node_modules
+      # Logs e uploads
       - ./logs:/app/logs
-      # Volume para uploads temporários
       - ./uploads:/app/uploads
-      # Volume para SQLite (persistência do banco em modo file:)
-      - sqlite-data:/app/data
+      # SQLite no host: mesmo arquivo para o app e para SQLPro/outros clientes
+      - ./data:/app/data
+      # Credenciais Google (reCAPTCHA Enterprise, etc.)
+      - ./gcloud-credentials.json:/app/gcloud-credentials.json:ro
     networks:
       - promocode-network
+    stdin_open: true
+    tty: true
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # ===== Redis para Filas/Cache =====
   redis:
@@ -97,8 +106,9 @@ services:
 volumes:
   redis-data:
     driver: local
-  sqlite-data:
-    driver: local
+  # sqlite-data não é mais usado: SQLite está em ./data (bind mount) para acesso ao vivo
+  # sqlite-data:
+  #   driver: local
   # postgres-data:
   #   driver: local
 
