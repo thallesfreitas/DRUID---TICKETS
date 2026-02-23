@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "Promocode API",
+    "description": "Endpoints públicos e admin para gestão de códigos promocionais e resgates.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "adminToken", "value": "mock-jwt-token" },
+    { "key": "captchaToken", "value": "" },
+    { "key": "code", "value": "PROMO-EXAMPLE" },
+    { "key": "jobId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health",
+            "description": "Health check da API."
+          }
+        },
+        {
+          "name": "Settings (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/settings",
+            "description": "Obter configurações (datas de início/fim da campanha)."
+          }
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/stats",
+            "description": "Estatísticas públicas (total códigos, resgatados, etc.)."
+          }
+        },
+        {
+          "name": "Redeem",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{code}}\",\n  \"captchaToken\": \"{{captchaToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/redeem",
+            "description": "Resgatar código. Requer token reCAPTCHA válido."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('adminToken', res.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/login",
+            "description": "Autenticação admin. Retorna token (guardado na variável adminToken)."
+          }
+        },
+        {
+          "name": "Listar códigos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "disabled": true }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/codes?page=1&search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "codes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "search", "value": "" }
+              ]
+            },
+            "description": "Lista códigos paginados (50 por página). search: filtro por código ou IP."
+          }
+        },
+        {
+          "name": "Atualizar settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "disabled": true }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_date\": \"2025-01-01\",\n  \"end_date\": \"2025-12-31\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/settings",
+            "description": "Atualizar datas de início e fim da campanha."
+          }
+        },
+        {
+          "name": "Upload CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "disabled": true }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"csvData\": \"CODIGO1,https://link1.com\\nCODIGO2,https://link2.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/upload-csv",
+            "description": "Importar códigos via CSV. csvData: texto com linhas code,link (\\n entre linhas). Resposta inclui jobId para consultar status."
+          }
+        },
+        {
+          "name": "Status importação",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "disabled": true }
+            ],
+            "url": "{{baseUrl}}/api/admin/import-status/{{jobId}}",
+            "description": "Consultar status do job de importação. jobId retornado em Upload CSV."
+          }
+        },
+        {
+          "name": "Exportar resgatados",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}", "disabled": true }
+            ],
+            "url": "{{baseUrl}}/api/admin/export-redeemed",
+            "description": "Download CSV com códigos já resgatados (codigo, link, data, ip)."
+          }
+        }
+      ]
+    }
+  ]
+}
