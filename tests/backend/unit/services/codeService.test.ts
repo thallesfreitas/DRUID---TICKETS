@@ -201,7 +201,7 @@ describe('CodeService', () => {
       await service.getAll();
 
       const callArgs = db.execute.mock.calls[1][0];
-      expect(callArgs.args[2]).toBe(0); // offset for page 1
+      expect(callArgs.args[1]).toBe(0); // offset for page 1
     });
   });
 

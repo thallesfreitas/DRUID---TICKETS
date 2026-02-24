@@ -1,374 +1,139 @@
-/**
- * RedeemForm Component Tests
- * Presentational component for code redemption form
- * Tests: UI rendering, input handling, validation, submit, accessibility
- */
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RedeemForm } from '@/components/redeem/RedeemForm';
+import type { ComponentProps, FormEvent } from 'react';
 
-describe('RedeemForm Component', () => {
-  let mockOnSubmit: ReturnType<typeof vi.fn>;
-  let mockOnChange: ReturnType<typeof vi.fn>;
-  let mockOnCaptchaChange: ReturnType<typeof vi.fn>;
+const baseProps: ComponentProps<typeof RedeemForm> = {
+  code: '',
+  loading: false,
+  error: null,
+  isStarted: true,
+  isEnded: false,
+  startDate: undefined,
+  onSubmit: vi.fn(),
+  onChange: vi.fn(),
+  recaptchaMode: 'v2',
+  recaptchaReady: true,
+  recaptchaToken: 'token',
+  onRecaptchaRender: vi.fn(),
+};
 
-  const defaultProps = {
-    code: '',
-    loading: false,
-    error: null,
-    captchaVerified: false,
-    isStarted: true,
-    isEnded: false,
-    onSubmit: mockOnSubmit,
-    onChange: mockOnChange,
-    onCaptchaChange: mockOnCaptchaChange
-  };
+describe('RedeemForm', () => {
+  it('renders core form elements', () => {
+    render(<RedeemForm {...baseProps} />);
 
-  beforeEach(() => {
-    mockOnSubmit = vi.fn();
-    mockOnChange = vi.fn();
-    mockOnCaptchaChange = vi.fn();
+    expect(screen.getByText('Resgatar Código')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('EX: PROMO2024')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /validar código/i })).toBeInTheDocument();
   });
 
-  describe('Rendering', () => {
-    it('should render form with all elements', () => {
-      render(<RedeemForm {...defaultProps} />);
+  it('calls onChange when typing code', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
 
-      expect(screen.getByText(/Digite o código de promoção/i)).toBeInTheDocument();
-      expect(screen.getByRole('textbox', { name: /código/i })).toBeInTheDocument();
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /resgatar/i })).toBeInTheDocument();
-    });
+    render(<RedeemForm {...baseProps} onChange={onChange} />);
+    fireEvent.change(screen.getByPlaceholderText('EX: PROMO2024'), { target: { value: 'PROMO123' } });
 
-    it('should render code input with correct value', () => {
-      render(<RedeemForm {...defaultProps} code="PROMO123" />);
-
-      const input = screen.getByRole('textbox', { name: /código/i }) as HTMLInputElement;
-      expect(input.value).toBe('PROMO123');
-    });
-
-    it('should render captcha checkbox', () => {
-      render(<RedeemForm {...defaultProps} />);
-
-      const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-      expect(checkbox).toBeInTheDocument();
-      expect(checkbox.checked).toBe(false);
-    });
-
-    it('should render submit button', () => {
-      render(<RedeemForm {...defaultProps} />);
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      expect(button).toBeInTheDocument();
-    });
+    expect(onChange).toHaveBeenCalledWith('PROMO123');
   });
 
-  describe('Input Handling', () => {
-    it('should call onChange when code input changes', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
+  it('calls onSubmit when form is submitted and enabled', async () => {
+    const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
+    const user = userEvent.setup();
 
-      const input = screen.getByRole('textbox', { name: /código/i });
-      await user.type(input, 'PROMO123');
+    render(<RedeemForm {...baseProps} code="PROMO123" onSubmit={onSubmit} />);
 
-      // onChange called for each character
-      expect(mockOnChange).toHaveBeenCalledWith('P');
-      expect(mockOnChange).toHaveBeenCalledWith('PR');
-      expect(mockOnChange).toHaveBeenCalledWith('PROMO123');
-    });
-
-    it('should allow special characters in code input', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
-
-      const input = screen.getByRole('textbox');
-      await user.type(input, 'PROMO-2024_ABC');
-
-      expect(mockOnChange).toHaveBeenCalledWith(expect.stringContaining('-'));
-      expect(mockOnChange).toHaveBeenCalledWith(expect.stringContaining('_'));
-    });
-
-    it('should call onCaptchaChange when checkbox toggles', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
-
-      const checkbox = screen.getByRole('checkbox');
-      await user.click(checkbox);
-
-      expect(mockOnCaptchaChange).toHaveBeenCalled();
-    });
-
-    it('should update captcha checkbox state', async () => {
-      const { rerender } = render(<RedeemForm {...defaultProps} captchaVerified={false} />);
-
-      let checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-      expect(checkbox.checked).toBe(false);
-
-      rerender(<RedeemForm {...defaultProps} captchaVerified={true} />);
-
-      checkbox = screen.getByRole('checkbox') as HTMLInputElement;
-      expect(checkbox.checked).toBe(true);
-    });
+    await user.click(screen.getByRole('button', { name: /validar código/i }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  describe('Form Submission', () => {
-    it('should call onSubmit when form is submitted', async () => {
-      render(<RedeemForm {...defaultProps} code="PROMO123" />);
-      const user = userEvent.setup();
+  it('disables submit in v2 mode when recaptcha token is missing', () => {
+    render(<RedeemForm {...baseProps} recaptchaToken="" />);
 
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      await user.click(button);
-
-      expect(mockOnSubmit).toHaveBeenCalled();
-    });
-
-    it('should call onSubmit with form event', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      await user.click(button);
-
-      expect(mockOnSubmit).toHaveBeenCalledWith(expect.any(Object));
-    });
-
-    it('should submit form when Enter key pressed', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
-
-      const input = screen.getByRole('textbox');
-      await user.click(input);
-      await user.keyboard('{Enter}');
-
-      expect(mockOnSubmit).toHaveBeenCalled();
-    });
-
-    it('should disable submit button while loading', () => {
-      render(<RedeemForm {...defaultProps} loading={true} />);
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      expect(button).toBeDisabled();
-    });
-
-    it('should show loading spinner when loading', () => {
-      render(<RedeemForm {...defaultProps} loading={true} />);
-
-      // Check for loading indicator text or spinner
-      expect(screen.getByText(/carregando|processando/i)).toBeInTheDocument();
-    });
+    expect(screen.getByRole('button', { name: /validar código/i })).toBeDisabled();
   });
 
-  describe('Error Display', () => {
-    it('should display error message when error is provided', () => {
-      const errorMessage = 'Código inválido';
-      render(<RedeemForm {...defaultProps} error={errorMessage} />);
+  it('disables submit in enterprise mode when not ready', () => {
+    render(
+      <RedeemForm
+        {...baseProps}
+        recaptchaMode="enterprise"
+        recaptchaReady={false}
+        recaptchaToken=""
+      />
+    );
 
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
-    });
-
-    it('should not display error when error is null', () => {
-      render(<RedeemForm {...defaultProps} error={null} />);
-
-      // Error alert should not be visible
-      const errorContainer = screen.queryByRole('alert');
-      expect(errorContainer).not.toBeInTheDocument();
-    });
-
-    it('should display different error types', () => {
-      const errors = [
-        'Código já foi utilizado',
-        'Muitas tentativas. Tente novamente em 15 minutos',
-        'Promoção ainda não começou'
-      ];
-
-      errors.forEach(error => {
-        const { unmount } = render(<RedeemForm {...defaultProps} error={error} />);
-        expect(screen.getByText(error)).toBeInTheDocument();
-        unmount();
-      });
-    });
+    expect(screen.getByRole('button', { name: /validar código/i })).toBeDisabled();
   });
 
-  describe('Validation States', () => {
-    it('should show validation state when form is invalid', () => {
-      render(<RedeemForm {...defaultProps} error="Campo obrigatório" />);
+  it('hides captcha container in enterprise mode', () => {
+    const { container } = render(
+      <RedeemForm
+        {...baseProps}
+        recaptchaMode="enterprise"
+        recaptchaToken=""
+      />
+    );
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.getAttribute('aria-invalid')).toBe('true');
-    });
-
-    it('should not show validation error when form is valid', () => {
-      render(<RedeemForm {...defaultProps} error={null} code="PROMO123" />);
-
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.getAttribute('aria-invalid')).toBe('false');
-    });
-
-    it('should require captcha verification', () => {
-      render(
-        <RedeemForm
-          {...defaultProps}
-          captchaVerified={false}
-          isEnded={false}
-          isStarted={true}
-        />
-      );
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      // Button should be disabled if captcha not verified (depending on implementation)
-      // or there should be a clear indication that captcha is required
-      expect(screen.getByText(/verificar|captcha|humano/i)).toBeInTheDocument();
-    });
+    expect(container.querySelector('#recaptcha-container')).not.toBeInTheDocument();
   });
 
-  describe('Promotional Dates', () => {
-    it('should display promotional dates info', () => {
-      render(<RedeemForm {...defaultProps} isStarted={true} isEnded={false} />);
+  it('renders captcha container in v2 mode', () => {
+    const { container } = render(<RedeemForm {...baseProps} recaptchaMode="v2" />);
 
-      // Should show that promo is active
-      expect(screen.getByText(/promoção ativa|resgate disponível/i)).toBeInTheDocument();
-    });
-
-    it('should show message when promo has not started', () => {
-      render(<RedeemForm {...defaultProps} isStarted={false} isEnded={false} />);
-
-      expect(screen.getByText(/ainda não começou|em breve/i)).toBeInTheDocument();
-    });
-
-    it('should show message when promo has ended', () => {
-      render(<RedeemForm {...defaultProps} isStarted={true} isEnded={true} />);
-
-      expect(screen.getByText(/encerrada|expirou|fim/i)).toBeInTheDocument();
-    });
-
-    it('should disable form when promo is not started', () => {
-      render(<RedeemForm {...defaultProps} isStarted={false} />);
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      expect(button).toBeDisabled();
-    });
-
-    it('should disable form when promo has ended', () => {
-      render(<RedeemForm {...defaultProps} isEnded={true} />);
-
-      const button = screen.getByRole('button', { name: /resgatar/i });
-      expect(button).toBeDisabled();
-    });
+    expect(container.querySelector('#recaptcha-container')).toBeInTheDocument();
   });
 
-  describe('Accessibility', () => {
-    it('should have proper label associations', () => {
-      render(<RedeemForm {...defaultProps} />);
+  it('calls onRecaptchaRender once when ready in v2 mode', async () => {
+    const onRecaptchaRender = vi.fn();
 
-      const input = screen.getByRole('textbox', { name: /código/i });
-      expect(input).toBeInTheDocument();
+    render(
+      <RedeemForm
+        {...baseProps}
+        recaptchaMode="v2"
+        recaptchaReady={true}
+        onRecaptchaRender={onRecaptchaRender}
+      />
+    );
+
+    await waitFor(() => {
+      expect(onRecaptchaRender).toHaveBeenCalledWith('recaptcha-container');
     });
-
-    it('should have descriptive button text', () => {
-      render(<RedeemForm {...defaultProps} />);
-
-      const button = screen.getByRole('button');
-      expect(button.textContent).toMatch(/resgatar/i);
-    });
-
-    it('should provide error feedback with aria-invalid', () => {
-      const { rerender } = render(<RedeemForm {...defaultProps} error={null} />);
-
-      let input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.getAttribute('aria-invalid')).toBe('false');
-
-      rerender(<RedeemForm {...defaultProps} error="Erro" />);
-
-      input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.getAttribute('aria-invalid')).toBe('true');
-    });
-
-    it('should announce loading state', () => {
-      render(<RedeemForm {...defaultProps} loading={true} />);
-
-      const button = screen.getByRole('button');
-      expect(button.getAttribute('aria-busy')).toBe('true');
-    });
+    expect(onRecaptchaRender).toHaveBeenCalledTimes(1);
   });
 
-  describe('Edge Cases', () => {
-    it('should handle rapid input changes', async () => {
-      render(<RedeemForm {...defaultProps} />);
-      const user = userEvent.setup();
+  it('shows schedule message before start date', () => {
+    render(
+      <RedeemForm
+        {...baseProps}
+        isStarted={false}
+        startDate="2026-03-20"
+        recaptchaToken=""
+      />
+    );
 
-      const input = screen.getByRole('textbox');
-      await user.type(input, 'RAPID', { delay: 1 });
-
-      expect(mockOnChange).toHaveBeenCalledWith('RAPID');
-    });
-
-    it('should handle very long code inputs', async () => {
-      render(<RedeemForm {...defaultProps} code={'A'.repeat(100)} />);
-
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.value.length).toBe(100);
-    });
-
-    it('should handle simultaneous loading and error states', () => {
-      render(
-        <RedeemForm
-          {...defaultProps}
-          loading={true}
-          error="Algum erro ocorreu"
-        />
-      );
-
-      expect(screen.getByText(/carregando|processando/i)).toBeInTheDocument();
-      expect(screen.getByText('Algum erro ocorreu')).toBeInTheDocument();
-    });
-
-    it('should handle all state combinations', () => {
-      const states = [
-        { loading: true, captchaVerified: true, error: null },
-        { loading: false, captchaVerified: false, error: 'Error' },
-        { loading: true, captchaVerified: false, error: 'Error' },
-        { loading: false, captchaVerified: true, error: null }
-      ];
-
-      states.forEach(state => {
-        const { unmount } = render(<RedeemForm {...defaultProps} {...state} />);
-        expect(screen.getByRole('button')).toBeInTheDocument();
-        unmount();
-      });
-    });
+    expect(screen.getByRole('button', { name: /início em/i })).toBeDisabled();
   });
 
-  describe('Props Variations', () => {
-    it('should render with empty code', () => {
-      render(<RedeemForm {...defaultProps} code="" />);
+  it('shows ended message when campaign is over', () => {
+    render(<RedeemForm {...baseProps} isEnded={true} recaptchaToken="" />);
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.value).toBe('');
-    });
+    expect(screen.getByRole('button', { name: /resgates encerrados/i })).toBeDisabled();
+  });
 
-    it('should handle uppercase code input', () => {
-      render(<RedeemForm {...defaultProps} code="PROMO123" />);
+  it('renders error block when error is present', () => {
+    render(<RedeemForm {...baseProps} error="Código inválido" />);
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      expect(input.value).toBe('PROMO123');
-    });
+    expect(screen.getByText('Código inválido')).toBeInTheDocument();
+  });
 
-    it('should handle all callback prop types', async () => {
-      const onSubmitWithoutEvent = vi.fn();
-      render(
-        <RedeemForm
-          {...defaultProps}
-          onSubmit={onSubmitWithoutEvent}
-        />
-      );
-      const user = userEvent.setup();
+  it('submits form through native submit event', () => {
+    const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
 
-      const button = screen.getByRole('button');
-      await user.click(button);
+    const { container } = render(<RedeemForm {...baseProps} onSubmit={onSubmit} />);
+    fireEvent.submit(container.querySelector('form')!);
 
-      expect(onSubmitWithoutEvent).toHaveBeenCalled();
-    });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });

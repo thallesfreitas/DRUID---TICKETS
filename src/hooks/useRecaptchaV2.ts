@@ -1,73 +1,83 @@
 /**
- * Hook para reCAPTCHA v2 "Não sou um robô" (checkbox)
- * Carrega api.js e fornece funções para renderizar e obter token
+ * Hook que agora usa Cloudflare Turnstile (substitui o reCAPTCHA v2).
+ * Continua expondo a mesma interface para o restante da aplicação.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 declare global {
   interface Window {
-    grecaptcha?: {
-      enterprise?: {
-        ready: (cb: () => void) => void;
-        execute: (siteKey: string, options: { action: string }) => Promise<string>;
-      };
-      render: (container: string | HTMLElement, params: {
-        sitekey: string;
-        callback: (token: string) => void;
-        'expired-callback'?: () => void;
-        theme?: 'light' | 'dark';
-        size?: 'normal' | 'compact';
-      }) => number;
-      reset: (widgetId?: number) => void;
-      ready: (cb: () => void) => void;
+    turnstile?: {
+      render: (
+        container: string | HTMLElement,
+        options: {
+          sitekey: string;
+          callback: (token: string) => void;
+          'error-callback'?: () => void;
+          'expired-callback'?: () => void;
+          theme?: 'light' | 'dark';
+        }
+      ) => string | number;
+      reset: (widgetId?: string | number) => void;
     };
-    onRecaptchaLoad?: () => void;
   }
 }
 
+// Reutiliza a mesma env para não exigir mudança de configuração.
 const SITE_KEY = process.env.RECAPTCHA_SITE_KEY || '';
 
 export function useRecaptchaV2() {
   const [token, setToken] = useState<string>('');
   const [ready, setReady] = useState(false);
-  const widgetIdRef = useRef<number | null>(null);
+  const widgetIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
-    if (window.grecaptcha?.render) {
+    if (!SITE_KEY) return;
+
+    if (window.turnstile) {
       setReady(true);
       return;
     }
 
-    window.onRecaptchaLoad = () => setReady(true);
-
     const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
     script.async = true;
     script.defer = true;
+    script.onload = () => {
+      setReady(true);
+    };
     document.head.appendChild(script);
-
-    return () => { delete window.onRecaptchaLoad; };
   }, []);
 
-  const renderWidget = useCallback((containerId: string) => {
-    if (!ready || !window.grecaptcha || widgetIdRef.current !== null) return;
-    try {
-      widgetIdRef.current = window.grecaptcha.render(containerId, {
-        sitekey: SITE_KEY,
-        callback: (t: string) => setToken(t),
-        'expired-callback': () => setToken(''),
-        theme: 'light',
-        size: 'normal',
-      });
-    } catch (err) {
-      console.error('reCAPTCHA v2 render error:', err);
-    }
-  }, [ready]);
+  const renderWidget = useCallback(
+    (containerId: string) => {
+      if (!ready || !window.turnstile || widgetIdRef.current !== null) return;
+
+      const container =
+        typeof document !== 'undefined'
+          ? document.getElementById(containerId)
+          : null;
+
+      if (!container) return;
+
+      try {
+        widgetIdRef.current = window.turnstile.render(container, {
+          sitekey: SITE_KEY,
+          callback: (t: string) => setToken(t),
+          'expired-callback': () => setToken(''),
+          'error-callback': () => setToken(''),
+          theme: 'light',
+        });
+      } catch (err) {
+        console.error('Turnstile render error:', err);
+      }
+    },
+    [ready]
+  );
 
   const resetWidget = useCallback(() => {
-    if (window.grecaptcha && widgetIdRef.current !== null) {
-      window.grecaptcha.reset(widgetIdRef.current);
+    if (window.turnstile && widgetIdRef.current !== null) {
+      window.turnstile.reset(widgetIdRef.current);
       setToken('');
     }
   }, []);

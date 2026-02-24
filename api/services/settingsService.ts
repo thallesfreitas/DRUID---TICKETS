@@ -36,7 +36,8 @@ export class SettingsService {
     const results = await this.db.execute<Settings>(
       { sql: QUERIES.GET_SETTING, args: [key] }
     );
-    return results[0]?.value || null;
+    if (results[0] == null) return null;
+    return results[0].value ?? '';
   }
 
   /**

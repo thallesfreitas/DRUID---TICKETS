@@ -1,8 +1,8 @@
 /**
- * Verifica token reCAPTCHA.
+ * Verifica token de verificação humana.
  *
  * Modos (definido por RECAPTCHA_MODE no .env):
- *   "v2"         → verifica via siteverify (simples, checkbox)
+ *   "v2"         → verifica via Cloudflare Turnstile siteverify
  *   "enterprise" → verifica via Google Cloud reCAPTCHA Enterprise
  *
  * Se nenhuma chave estiver configurada, a verificação é ignorada (dev/teste).
@@ -11,9 +11,12 @@
 import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
 
 // ─── Configuração ────────────────────────────────────────────
-const RECAPTCHA_MODE = (process.env.RECAPTCHA_MODE || 'v2').toLowerCase();
 const RECAPTCHA_ACTION = 'redeem';
 const ENTERPRISE_MIN_SCORE = 0.5;
+
+function getRecaptchaMode(): string {
+  return (process.env.RECAPTCHA_MODE || 'v2').toLowerCase();
+}
 
 // ─── Enterprise client (lazy) ────────────────────────────────
 let enterpriseClient: RecaptchaEnterpriseServiceClient | null = null;
@@ -35,8 +38,8 @@ function getEnterpriseClient(): RecaptchaEnterpriseServiceClient | null {
   }
 }
 
-// ─── v2 siteverify ───────────────────────────────────────────
-async function verifyV2(token: string, userIp?: string): Promise<boolean> {
+// ─── Turnstile siteverify (modo v2) ────────────────────────────
+async function verifyTurnstile(token: string, userIp?: string): Promise<boolean> {
   const secretKey = process.env.RECAPTCHA_SECRET_KEY?.trim();
   if (!secretKey) return true;
   if (!token) return false;
@@ -48,16 +51,16 @@ async function verifyV2(token: string, userIp?: string): Promise<boolean> {
       ...(userIp && { remoteip: userIp }),
     });
 
-    const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     });
 
-    const data = await res.json();
+    const data = (await res.json()) as { success?: boolean; 'error-codes'?: string[] };
     return data.success === true;
   } catch (err) {
-    console.error('[reCAPTCHA v2] verification error:', err);
+    console.error('[Turnstile] verification error:', err);
     return false;
   }
 }
@@ -126,8 +129,8 @@ async function verifyEnterprise(token: string, userIp?: string): Promise<boolean
 
 // ─── Função principal (exportada) ────────────────────────────
 export async function verifyRecaptcha(token: string, userIp?: string): Promise<boolean> {
-  if (RECAPTCHA_MODE === 'enterprise') {
+  if (getRecaptchaMode() === 'enterprise') {
     return verifyEnterprise(token, userIp);
   }
-  return verifyV2(token, userIp);
+  return verifyTurnstile(token, userIp);
 }

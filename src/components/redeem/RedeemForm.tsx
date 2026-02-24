@@ -1,7 +1,7 @@
 /**
  * RedeemForm Component
  * Responsible for rendering the code redemption form
- * Suporta reCAPTCHA v2 (checkbox) e Enterprise (invisível)
+ * Integrado com verificação humana via Turnstile/recaptcha hooks
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -103,18 +103,11 @@ export function RedeemForm({
           />
         </div>
 
-        {/* reCAPTCHA v2 - Widget "Não sou um robô" (só aparece no modo v2) */}
+        {/* Widget de verificação humana (v2/Turnstile) */}
         {!isEnterprise && (
           <div className="flex items-center justify-center">
             <div id="recaptcha-container"></div>
           </div>
-        )}
-
-        {/* Enterprise - texto discreto */}
-        {isEnterprise && (
-          <p className="text-[11px] text-center text-slate-400">
-            Protegido pelo reCAPTCHA Enterprise do Google.
-          </p>
         )}
 
         {/* Submit Button */}

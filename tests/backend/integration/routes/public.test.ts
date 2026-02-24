@@ -115,42 +115,42 @@ describe('Public Routes', () => {
   });
 
   describe('GET /health', () => {
-    it('should return health status with 200', (done) => {
+    it('should return health status with 200', () => {
       const req = createMockRequest();
       const res = createMockResponse();
 
-      const handler = router.stack.find((layer: any) => layer.route?.path === '/health')?.route?.methods?.get;
+      const layer = router.stack.find((layer: any) => layer.route?.path === '/health');
+      const handler = layer?.route?.stack?.[0]?.handle;
       if (handler) {
-        handler[0](req, res);
+        handler(req, res, () => {});
         expect(res.statusCode).toBe(200);
         expect(res.jsonData).toHaveProperty('status', 'ok');
         expect(res.jsonData).toHaveProperty('time');
         expect(res.jsonData).toHaveProperty('db_connected', true);
-        done();
       }
     });
 
-    it('should return ISO timestamp', (done) => {
+    it('should return ISO timestamp', () => {
       const req = createMockRequest();
       const res = createMockResponse();
 
-      const handler = router.stack.find((layer: any) => layer.route?.path === '/health')?.route?.methods?.get;
+      const layer = router.stack.find((layer: any) => layer.route?.path === '/health');
+      const handler = layer?.route?.stack?.[0]?.handle;
       if (handler) {
-        handler[0](req, res);
+        handler(req, res, () => {});
         expect(res.jsonData.time).toMatch(/\d{4}-\d{2}-\d{2}T/);
-        done();
       }
     });
 
-    it('should not require authentication', (done) => {
+    it('should not require authentication', () => {
       const req = createMockRequest({ headers: {} });
       const res = createMockResponse();
 
-      const handler = router.stack.find((layer: any) => layer.route?.path === '/health')?.route?.methods?.get;
+      const layer = router.stack.find((layer: any) => layer.route?.path === '/health');
+      const handler = layer?.route?.stack?.[0]?.handle;
       if (handler) {
-        handler[0](req, res);
+        handler(req, res, () => {});
         expect(res.statusCode).toBe(200);
-        done();
       }
     });
   });

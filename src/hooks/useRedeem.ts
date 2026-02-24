@@ -44,7 +44,7 @@ export function useRedeem(options: UseRedeemOptions = {}): UseRedeemState {
   );
 
   const handleRedeem = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!code) return;
 

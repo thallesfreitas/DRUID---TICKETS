@@ -21,12 +21,6 @@ export function Footer({ setView }: FooterProps) {
         </button>
       </div>
       <p>© {currentYear} PromoCode Inc. <br></br>Todos os direitos reservados.</p>
-      {/* <hr className="my-4 border-slate-200" />
-      <small className="text-slate-400 text-xs w-full mx-auto pr-4 pl-4 text-left flex flex-col items-start justify-start" >
-        <span>Este site é protegido pelo <strong>reCAPTCHA</strong> e a</span>
-        <span><a href="https://policies.google.com/privacy" className="text-slate-600 hover:text-slate-700 transition-colors">Política de Privacidade</a> e <a href="https://policies.google.com/terms" className="text-slate-600 hover:text-slate-700 transition-colors">Termos de Serviço</a></span>
-        <span> do Google se aplicam.</span>
-      </small> */}
     </footer>
   );
 }

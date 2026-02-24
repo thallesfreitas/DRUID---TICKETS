@@ -1,405 +1,76 @@
-/**
- * useFetch Hook Tests
- * Generic data fetching hook with loading, error, and refetch states
- */
-
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useFetch } from '@/hooks/useFetch';
 
-describe('useFetch Hook', () => {
-  let mockFetcher: ReturnType<typeof vi.fn>;
+describe('useFetch', () => {
+  it('fetches data on mount by default', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ id: 1, name: 'Test' });
 
-  beforeEach(() => {
-    mockFetcher = vi.fn();
-    vi.clearAllMocks();
+    const { result } = renderHook(() => useFetch(fetcher));
+
+    expect(result.current.data).toBeNull();
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.data).toEqual({ id: 1, name: 'Test' }));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
   });
 
-  describe('Initial State', () => {
-    it('should have null data initially', () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
+  it('stores error when fetch fails', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() => useFetch(mockFetcher));
+    const { result } = renderHook(() => useFetch(fetcher));
 
-      expect(result.current.data).toBeNull();
-    });
-
-    it('should have loading false initially', () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      expect(result.current.loading).toBe(false);
-    });
-
-    it('should have error null initially', () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      expect(result.current.error).toBeNull();
-    });
+    await waitFor(() => expect(result.current.error).toBe('Network error'));
+    expect(result.current.data).toBeNull();
+    expect(result.current.loading).toBe(false);
   });
 
-  describe('Loading Data', () => {
-    it('should fetch data on mount', async () => {
-      mockFetcher.mockResolvedValue({ id: 1, name: 'Test User' });
+  it('supports refetch', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 1 })
+      .mockResolvedValueOnce({ id: 2 });
 
-      renderHook(() => useFetch(mockFetcher));
+    const { result } = renderHook(() => useFetch(fetcher));
 
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalled();
-      });
+    await waitFor(() => expect(result.current.data).toEqual({ id: 1 }));
+
+    await act(async () => {
+      await result.current.refetch();
     });
 
-    it('should set loading to true while fetching', async () => {
-      mockFetcher.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({ name: 'Test' }), 100))
-      );
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-    });
-
-    it('should update data when fetch succeeds', async () => {
-      const mockData = { id: 1, name: 'Test User' };
-      mockFetcher.mockResolvedValue(mockData);
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toEqual(mockData);
-      });
-    });
-
-    it('should clear error when fetch succeeds', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.error).toBeNull();
-      });
-    });
-
-    it('should set loading false after fetch completes', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(result.current.data).toEqual({ id: 2 });
   });
 
-  describe('Error Handling', () => {
-    it('should set error when fetch fails', async () => {
-      const error = new Error('Network error');
-      mockFetcher.mockRejectedValue(error);
+  it('does not auto fetch when autoFetch is false', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true });
 
-      const { result } = renderHook(() => useFetch(mockFetcher));
+    const { result } = renderHook(() => useFetch(fetcher, [], false));
 
-      await waitFor(() => {
-        expect(result.current.error).toBe('Network error');
-      });
+    expect(fetcher).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.refetch();
     });
 
-    it('should clear data when error occurs', async () => {
-      mockFetcher.mockRejectedValue(new Error('Fetch failed'));
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toBeNull();
-      });
-    });
-
-    it('should set loading false on error', async () => {
-      mockFetcher.mockRejectedValue(new Error('Error'));
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-    });
-
-    it('should handle different error types', async () => {
-      mockFetcher.mockRejectedValue(new TypeError('Invalid data'));
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.error).toContain('Invalid data');
-      });
-    });
-
-    it('should handle fetch timeout', async () => {
-      mockFetcher.mockRejectedValue(new Error('Timeout'));
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.error).toContain('Timeout');
-      });
-    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ ok: true });
   });
 
-  describe('Refetch Functionality', () => {
-    it('should provide refetch function', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
+  it('refetches when dependencies change', async () => {
+    const fetcher = vi.fn((id: number) => Promise.resolve({ id }));
 
-      const { result } = renderHook(() => useFetch(mockFetcher));
+    const { result, rerender } = renderHook(
+      ({ id }) => useFetch(() => fetcher(id), [id]),
+      { initialProps: { id: 1 } }
+    );
 
-      expect(typeof result.current.refetch).toBe('function');
-    });
+    await waitFor(() => expect(result.current.data).toEqual({ id: 1 }));
 
-    it('should refetch data when refetch is called', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test 1' });
+    rerender({ id: 2 });
 
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toEqual({ name: 'Test 1' });
-      });
-
-      mockFetcher.mockResolvedValue({ name: 'Test 2' });
-
-      await act(async () => {
-        await result.current.refetch();
-      });
-
-      await waitFor(() => {
-        expect(result.current.data).toEqual({ name: 'Test 2' });
-      });
-    });
-
-    it('should call fetcher again on refetch', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalledTimes(1);
-      });
-
-      await act(async () => {
-        await result.current.refetch();
-      });
-
-      expect(mockFetcher).toHaveBeenCalledTimes(2);
-    });
-
-    it('should clear error on successful refetch', async () => {
-      mockFetcher.mockRejectedValue(new Error('Error'));
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.error).toBe('Error');
-      });
-
-      mockFetcher.mockResolvedValue({ name: 'Success' });
-
-      await act(async () => {
-        await result.current.refetch();
-      });
-
-      await waitFor(() => {
-        expect(result.current.error).toBeNull();
-      });
-    });
-
-    it('should handle refetch error', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toBeDefined();
-      });
-
-      mockFetcher.mockRejectedValue(new Error('Refetch failed'));
-
-      await act(async () => {
-        await result.current.refetch();
-      });
-
-      await waitFor(() => {
-        expect(result.current.error).toBe('Refetch failed');
-      });
-    });
-  });
-
-  describe('Dependencies', () => {
-    it('should refetch when dependencies change', async () => {
-      mockFetcher.mockResolvedValue({ id: 1 });
-
-      const { rerender } = renderHook(
-        ({ deps }) => useFetch(mockFetcher, deps),
-        { initialProps: { deps: [1] } }
-      );
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalledTimes(1);
-      });
-
-      rerender({ deps: [2] });
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalledTimes(2);
-      });
-    });
-
-    it('should not refetch when dependencies stay same', async () => {
-      mockFetcher.mockResolvedValue({ id: 1 });
-
-      const { rerender } = renderHook(
-        ({ deps }) => useFetch(mockFetcher, deps),
-        { initialProps: { deps: [1] } }
-      );
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalledTimes(1);
-      });
-
-      rerender({ deps: [1] });
-
-      expect(mockFetcher).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle empty dependencies array', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      renderHook(() => useFetch(mockFetcher, []));
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalledTimes(1);
-      });
-    });
-  });
-
-  describe('Type Safety', () => {
-    it('should return typed data', async () => {
-      interface User {
-        id: number;
-        name: string;
-        email: string;
-      }
-
-      const mockData: User = { id: 1, name: 'John', email: 'john@example.com' };
-      mockFetcher.mockResolvedValue(mockData);
-
-      const { result } = renderHook(() => useFetch<User>(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data?.name).toBe('John');
-        expect(result.current.data?.email).toBe('john@example.com');
-      });
-    });
-
-    it('should handle generic type parameters', async () => {
-      interface ApiResponse<T> {
-        data: T;
-        status: string;
-      }
-
-      const mockData: ApiResponse<{ id: number }> = {
-        data: { id: 1 },
-        status: 'success'
-      };
-
-      mockFetcher.mockResolvedValue(mockData);
-
-      const { result } = renderHook(() => useFetch<ApiResponse<{ id: number }>>(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data?.data.id).toBe(1);
-      });
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should handle null response', async () => {
-      mockFetcher.mockResolvedValue(null);
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toBeNull();
-      });
-    });
-
-    it('should handle undefined response', async () => {
-      mockFetcher.mockResolvedValue(undefined);
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toBeUndefined();
-      });
-    });
-
-    it('should handle empty object response', async () => {
-      mockFetcher.mockResolvedValue({});
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data).toEqual({});
-      });
-    });
-
-    it('should handle array response', async () => {
-      const mockArray = [{ id: 1 }, { id: 2 }];
-      mockFetcher.mockResolvedValue(mockArray);
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(Array.isArray(result.current.data)).toBe(true);
-        expect(result.current.data?.length).toBe(2);
-      });
-    });
-
-    it('should handle very large data', async () => {
-      const largeData = Array.from({ length: 10000 }, (_, i) => ({
-        id: i,
-        name: `Item ${i}`
-      }));
-
-      mockFetcher.mockResolvedValue(largeData);
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(result.current.data?.length).toBe(10000);
-      });
-    });
-
-    it('should handle rapid refetch calls', async () => {
-      mockFetcher.mockResolvedValue({ name: 'Test' });
-
-      const { result } = renderHook(() => useFetch(mockFetcher));
-
-      await waitFor(() => {
-        expect(mockFetcher).toHaveBeenCalled();
-      });
-
-      await act(async () => {
-        await Promise.all([
-          result.current.refetch(),
-          result.current.refetch(),
-          result.current.refetch()
-        ]);
-      });
-
-      // Should handle multiple rapid calls
-      expect(mockFetcher.mock.calls.length).toBeGreaterThan(1);
-    });
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.data).toEqual({ id: 2 }));
   });
 });

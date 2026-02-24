@@ -30,11 +30,13 @@ export default defineConfig({
     }
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './'),
-      '@api': path.resolve(__dirname, './api'),
-      '@src': path.resolve(__dirname, './src'),
-      '@tests': path.resolve(__dirname, './tests')
-    }
+    alias: [
+      { find: /^@\/api\/(.*)$/, replacement: path.resolve(__dirname, './api/$1') },
+      { find: /^@\/tests\/(.*)$/, replacement: path.resolve(__dirname, './tests/$1') },
+      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, './src/$1') },
+      { find: '@api', replacement: path.resolve(__dirname, './api') },
+      { find: '@src', replacement: path.resolve(__dirname, './src') },
+      { find: '@tests', replacement: path.resolve(__dirname, './tests') }
+    ]
   }
 });

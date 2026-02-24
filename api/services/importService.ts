@@ -31,6 +31,16 @@ export class ImportService {
       sql: QUERIES.INSERT_IMPORT_JOB,
       args: [jobId, totalLines],
     });
+
+    this.importQueue.set(jobId, {
+      jobId,
+      status: 'processing',
+      progress: 0,
+      totalLines,
+      processedLines: 0,
+      successfulLines: 0,
+      failedLines: 0,
+    });
   }
 
   /**
@@ -74,6 +84,21 @@ export class ImportService {
     await this.db.execute({
       sql: QUERIES.UPDATE_IMPORT_JOB,
       args: [processedLines, successfulLines, failedLines, jobId],
+    });
+
+    const existing = this.importQueue.get(jobId);
+    const totalLines = existing?.totalLines ?? processedLines + failedLines;
+    const progress =
+      totalLines > 0 ? Math.min((processedLines / totalLines) * 100, 100) : 0;
+
+    this.importQueue.set(jobId, {
+      jobId,
+      status: 'processing',
+      progress: Math.round(progress),
+      totalLines,
+      processedLines,
+      successfulLines,
+      failedLines,
     });
   }
 
@@ -155,11 +180,12 @@ export class ImportService {
 
         try {
           const chunkSuccess = await codeService.insertBatch(codes);
-          successfulLines += chunkSuccess;
-          failedLines += chunk.length - chunkSuccess;
+          const appliedSuccess = Math.min(chunkSuccess, codes.length);
+          successfulLines += appliedSuccess;
+          failedLines += codes.length - appliedSuccess;
         } catch (chunkErr) {
           console.error('Erro no processamento do chunk:', chunkErr);
-          failedLines += chunk.length;
+          throw chunkErr;
         }
 
         const processedLines = Math.min((chunkIndex + 1) * chunkSize, totalLines);
