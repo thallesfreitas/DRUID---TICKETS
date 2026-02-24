@@ -2,10 +2,10 @@
  * ImportService - Gerenciamento de importação de códigos via CSV
  */
 
-import { DatabaseClient } from '../database/client';
-import { ImportJob, ImportStatusResponse } from '../types';
-import { QUERIES } from '../constants/queries';
-import { API_DEFAULTS } from '../constants/api';
+import { DatabaseClient } from '../database/client.js';
+import { ImportJob, ImportStatusResponse } from '../types/index.js';
+import { QUERIES } from '../constants/queries.js';
+import { API_DEFAULTS } from '../constants/api.js';
 
 export interface ImportProgress {
   jobId: string;

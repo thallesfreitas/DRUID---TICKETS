@@ -148,9 +148,8 @@ export class DatabaseClient {
       },
       { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_email ON admin_login_codes(email)` },
       { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_expires ON admin_login_codes(expires_at)` },
-      { sql: `INSERT INTO user_admin (nome, email) SELECT 'Admin', 'admin@example.com' WHERE (SELECT COUNT(*) FROM user_admin) = 0` },
+      { sql: `INSERT INTO user_admin (nome, email) SELECT 'Pedro', 'pedro@rais.com.br' WHERE (SELECT COUNT(*) FROM user_admin) = 0` },
       { sql: `INSERT OR IGNORE INTO user_admin (nome, email) VALUES ('Thalles', 'thallesfreitas@gmail.com')` },
-      { sql: `INSERT OR IGNORE INTO user_admin (nome, email) VALUES ('admin', 'admin@velethuadr.resend.app')` },
       { sql: `INSERT OR IGNORE INTO settings (key, value) VALUES ('start_date', '')` },
       { sql: `INSERT OR IGNORE INTO settings (key, value) VALUES ('end_date', '')` },
     ];

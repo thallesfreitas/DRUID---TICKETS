@@ -2,7 +2,7 @@
  * AdminAuthService - Admin users and one-time login codes
  */
 
-import { DatabaseClient } from '../database/client';
+import { DatabaseClient } from '../database/client.js';
 
 export interface UserAdminRow {
   id: number;

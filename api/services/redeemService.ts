@@ -2,12 +2,12 @@
  * RedeemService - Lógica de resgate de códigos
  */
 
-import { RedeemResponse, AppError } from '../types';
-import { ERROR_CODES, HTTP_STATUS } from '../constants/api';
-import { ERROR_MESSAGES } from '../constants/messages';
-import { CodeService } from './codeService';
-import { SettingsService } from './settingsService';
-import { BruteForceService } from './bruteForceService';
+import { RedeemResponse, AppError } from '../types/index.js';
+import { ERROR_CODES, HTTP_STATUS } from '../constants/api.js';
+import { ERROR_MESSAGES } from '../constants/messages.js';
+import { CodeService } from './codeService.js';
+import { SettingsService } from './settingsService.js';
+import { BruteForceService } from './bruteForceService.js';
 
 export class RedeemService {
   constructor(

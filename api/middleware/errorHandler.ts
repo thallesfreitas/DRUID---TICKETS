@@ -2,8 +2,8 @@
  * Middleware de tratamento de erros centralizado
  */
 
-import { AppError } from '../types';
-import { HTTP_STATUS } from '../constants/api';
+import { AppError } from '../types/index.js';
+import { HTTP_STATUS } from '../constants/api.js';
 
 export function errorHandler(
   err: any,

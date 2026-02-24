@@ -2,9 +2,9 @@
  * SettingsService - Gerenciamento de configurações da promoção
  */
 
-import { DatabaseClient } from '../database/client';
-import { Settings, SettingsData, AppError } from '../types';
-import { QUERIES } from '../constants/queries';
+import { DatabaseClient } from '../database/client.js';
+import { Settings, SettingsData, AppError } from '../types/index.js';
+import { QUERIES } from '../constants/queries.js';
 
 export class SettingsService {
   constructor(private db: DatabaseClient) {}

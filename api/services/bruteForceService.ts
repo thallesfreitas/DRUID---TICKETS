@@ -2,11 +2,11 @@
  * BruteForceService - Proteção contra ataques de força bruta
  */
 
-import { DatabaseClient } from '../database/client';
-import { BruteForceAttempt, AppError } from '../types';
-import { QUERIES } from '../constants/queries';
-import { ERROR_CODES, HTTP_STATUS, API_DEFAULTS } from '../constants/api';
-import { ERROR_MESSAGES } from '../constants/messages';
+import { DatabaseClient } from '../database/client.js';
+import { BruteForceAttempt, AppError } from '../types/index.js';
+import { QUERIES } from '../constants/queries.js';
+import { ERROR_CODES, HTTP_STATUS, API_DEFAULTS } from '../constants/api.js';
+import { ERROR_MESSAGES } from '../constants/messages.js';
 
 export class BruteForceService {
   constructor(private db: DatabaseClient) {}

@@ -2,9 +2,9 @@
  * StatsService - Estatísticas e relatórios
  */
 
-import { DatabaseClient } from '../database/client';
-import { Stats } from '../types';
-import { QUERIES } from '../constants/queries';
+import { DatabaseClient } from '../database/client.js';
+import { Stats } from '../types/index.js';
+import { QUERIES } from '../constants/queries.js';
 
 export class StatsService {
   constructor(private db: DatabaseClient) {}

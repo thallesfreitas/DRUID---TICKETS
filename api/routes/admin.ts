@@ -3,17 +3,17 @@
  */
 
 import { Router } from 'express';
-import { CodeService } from '../services/codeService';
-import { SettingsService } from '../services/settingsService';
-import { StatsService } from '../services/statsService';
-import { ImportService } from '../services/importService';
-import { AdminAuthService } from '../services/adminAuthService';
-import { EmailService } from '../services/emailService';
-import { CsvUploadSchema, SettingsSchema, AdminRequestCodeSchema, AdminVerifyCodeSchema } from '../validators';
-import { asyncHandler } from '../middleware/errorHandler';
-import { adminAuth, signAdminToken } from '../middleware/adminAuth';
-import { AppError, SettingsData } from '../types';
-import { HTTP_STATUS, API_DEFAULTS } from '../constants/api';
+import { CodeService } from '../services/codeService.js';
+import { SettingsService } from '../services/settingsService.js';
+import { StatsService } from '../services/statsService.js';
+import { ImportService } from '../services/importService.js';
+import { AdminAuthService } from '../services/adminAuthService.js';
+import { EmailService } from '../services/emailService.js';
+import { CsvUploadSchema, SettingsSchema, AdminRequestCodeSchema, AdminVerifyCodeSchema } from '../validators/index.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { adminAuth, signAdminToken } from '../middleware/adminAuth.js';
+import { AppError, SettingsData } from '../types/index.js';
+import { HTTP_STATUS, API_DEFAULTS } from '../constants/api.js';
 
 export function createAdminRoutes(
   codeService: CodeService,

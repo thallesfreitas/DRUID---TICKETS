@@ -2,10 +2,10 @@
  * CodeService - Lógica de negócio para gerenciamento de códigos
  */
 
-import { DatabaseClient } from '../database/client';
-import { Code, PaginatedCodes } from '../types';
-import { QUERIES } from '../constants/queries';
-import { API_DEFAULTS } from '../constants/api';
+import { DatabaseClient } from '../database/client.js';
+import { Code, PaginatedCodes } from '../types/index.js';
+import { QUERIES } from '../constants/queries.js';
+import { API_DEFAULTS } from '../constants/api.js';
 
 export class CodeService {
   constructor(private db: DatabaseClient) {}

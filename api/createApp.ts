@@ -3,18 +3,18 @@
  */
 
 import express from 'express';
-import { dbClient } from './database/client';
-import { CodeService } from './services/codeService';
-import { SettingsService } from './services/settingsService';
-import { StatsService } from './services/statsService';
-import { BruteForceService } from './services/bruteForceService';
-import { ImportService } from './services/importService';
-import { RedeemService } from './services/redeemService';
-import { AdminAuthService } from './services/adminAuthService';
-import { EmailService } from './services/emailService';
-import { createPublicRoutes } from './routes/public';
-import { createAdminRoutes } from './routes/admin';
-import { errorHandler } from './middleware/errorHandler';
+import { dbClient } from './database/client.js';
+import { CodeService } from './services/codeService.js';
+import { SettingsService } from './services/settingsService.js';
+import { StatsService } from './services/statsService.js';
+import { BruteForceService } from './services/bruteForceService.js';
+import { ImportService } from './services/importService.js';
+import { RedeemService } from './services/redeemService.js';
+import { AdminAuthService } from './services/adminAuthService.js';
+import { EmailService } from './services/emailService.js';
+import { createPublicRoutes } from './routes/public.js';
+import { createAdminRoutes } from './routes/admin.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 export async function createApp() {
   const app = express();

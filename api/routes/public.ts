@@ -3,17 +3,17 @@
  */
 
 import { Router } from 'express';
-import { CodeService } from '../services/codeService';
-import { SettingsService } from '../services/settingsService';
-import { StatsService } from '../services/statsService';
-import { BruteForceService } from '../services/bruteForceService';
-import { RedeemService } from '../services/redeemService';
-import { RedeemSchema } from '../validators';
-import { asyncHandler, errorHandler } from '../middleware/errorHandler';
-import { AppError } from '../types';
-import { HTTP_STATUS, ERROR_CODES } from '../constants/api';
-import { ERROR_MESSAGES } from '../constants/messages';
-import { verifyRecaptcha } from '../services/recaptchaService';
+import { CodeService } from '../services/codeService.js';
+import { SettingsService } from '../services/settingsService.js';
+import { StatsService } from '../services/statsService.js';
+import { BruteForceService } from '../services/bruteForceService.js';
+import { RedeemService } from '../services/redeemService.js';
+import { RedeemSchema } from '../validators/index.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { AppError } from '../types/index.js';
+import { HTTP_STATUS, ERROR_CODES } from '../constants/api.js';
+import { ERROR_MESSAGES } from '../constants/messages.js';
+import { verifyRecaptcha } from '../services/recaptchaService.js';
 
 export function createPublicRoutes(
   codeService: CodeService,

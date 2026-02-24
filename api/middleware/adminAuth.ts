@@ -4,8 +4,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AppError } from '../types';
-import { HTTP_STATUS } from '../constants/api';
+import { AppError } from '../types/index.js';
+import { HTTP_STATUS } from '../constants/api.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.druidtickets_JWT_SECRET || 'dev-secret-change-in-production';
 
