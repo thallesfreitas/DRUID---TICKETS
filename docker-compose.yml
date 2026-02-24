@@ -1,0 +1,139 @@
+services:
+  # ===== Aplicação Node.js (Desenvolvimento) =====
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: promocode-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      # Database
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-file:/app/data/promo.db}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+      # Admin
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      # Redis
+      - REDIS_URL=redis://redis:6379/0
+      # HMR (Hot Module Replacement)
+      - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
+      - VITE_HMR_PORT=${VITE_HMR_PORT:-3000}
+      # reCAPTCHA (v2 ou enterprise, controlado por RECAPTCHA_MODE)
+      - RECAPTCHA_MODE=${RECAPTCHA_MODE:-v2}
+      - RECAPTCHA_SITE_KEY=${RECAPTCHA_SITE_KEY:-}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY:-}
+      - RECAPTCHA_PROJECT_ID=${RECAPTCHA_PROJECT_ID:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Hot-reload: monitora mudanças no código
+      - .:/app
+      - /app/node_modules
+      # Logs e uploads
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      # SQLite no host: mesmo arquivo para o app e para SQLPro/outros clientes
+      - ./data:/app/data
+      # Credenciais Google (reCAPTCHA Enterprise, etc.)
+      # - ./gcloud-credentials.json:/app/gcloud-credentials.json:ro
+      - ./gcloud-credentials.json:/app/gcloud-credentials.json:ro
+    networks:
+      - promocode-network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # ===== Importar CSV (profile tools)
+  # Uso: docker compose --profile tools run --rm import-csv
+  #      Coloque o CSV em ./data/codes_1000.csv ou: ... run --rm import-csv npm run import-csv /app/data/outro.csv
+  import-csv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    container_name: promocode-import-csv
+    environment:
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-file:/app/data/promo.db}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+    volumes:
+      - ./data:/app/data
+      - .:/app
+      - /app/node_modules
+    command: ["npm", "run", "import-csv", "/app/data/codes_1000.csv"]
+    networks:
+      - promocode-network
+
+  # ===== Redis para Filas/Cache =====
+  redis:
+    image: redis:7-alpine
+    container_name: promocode-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      # Volume para persistência de dados
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    networks:
+      - promocode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+
+  # ===== Postgres (Opcional, para substituir SQLite em produção) =====
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: promocode-postgres
+  #   environment:
+  #     - POSTGRES_DB=${DB_NAME:-promocode}
+  #     - POSTGRES_USER=${DB_USER:-postgres}
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - promocode-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # ===== PgAdmin (Opcional, para gerenciar Postgres) =====
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: promocode-pgadmin
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@example.com}
+  #     - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+  #   ports:
+  #     - "5050:80"
+  #   networks:
+  #     - promocode-network
+  #   depends_on:
+  #     - postgres
+  #   restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local
+  # sqlite-data não é mais usado: SQLite está em ./data (bind mount) para acesso ao vivo
+  # sqlite-data:
+  #   driver: local
+  # postgres-data:
+  #   driver: local
+
+networks:
+  promocode-network:
+    driver: bridge

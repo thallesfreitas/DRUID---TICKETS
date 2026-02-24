@@ -1,0 +1,31 @@
+# CODEOWNERS file for PromoCode repository
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - required review for all changes
+* @thallesfreitas
+
+# Frontend code owners
+/src/** @thallesfreitas
+
+# Backend code owners
+/api/** @thallesfreitas
+/server.ts @thallesfreitas
+
+# Tests - all contributors should review
+/tests/** @thallesfreitas
+
+# Configuration files
+/.github/** @thallesfreitas
+/package.json @thallesfreitas
+/tsconfig.json @thallesfreitas
+/vite.config.ts @thallesfreitas
+/vitest.config.ts @thallesfreitas
+
+# Docker configuration
+/Dockerfile @thallesfreitas
+/docker-compose.yml @thallesfreitas
+/Makefile @thallesfreitas
+
+# Environment and deployment
+/.env* @thallesfreitas
+/vercel.json @thallesfreitas
