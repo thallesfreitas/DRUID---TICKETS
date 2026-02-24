@@ -23,6 +23,9 @@ export interface AdminLoginCodeRow {
 const CODE_TTL_MINUTES = 15;
 const CODE_LENGTH = 6;
 
+// Código fixo temporário: aceita login de qualquer email cadastrado em user_admin (remover em produção)
+const FIXED_ADMIN_CODE = '123456';
+
 export class AdminAuthService {
   constructor(private db: DatabaseClient) {}
 
@@ -49,13 +52,21 @@ export class AdminAuthService {
     return { code, expiresAt: expiresStr };
   }
 
-  // Find valid (non-expired) code for email
+  // Find valid (non-expired) code for email, or accept fixed code for any registered admin
   async findValidCode(email: string, code: string): Promise<AdminLoginCodeRow | null> {
+    const trimmed = code.trim();
+    if (trimmed === FIXED_ADMIN_CODE) {
+      const admin = await this.findByEmail(email);
+      if (admin) {
+        return { id: 0, email: admin.email, code: trimmed, expires_at: '', created_at: '' };
+      }
+      return null;
+    }
     const normalized = email.trim().toLowerCase();
     const rows = await this.db.execute<AdminLoginCodeRow>({
       sql: `SELECT id, email, code, expires_at, created_at FROM admin_login_codes
             WHERE LOWER(email) = ? AND code = ? AND datetime(expires_at) > datetime('now') LIMIT 1`,
-      args: [normalized, code.trim()],
+      args: [normalized, trimmed],
     });
     return rows[0] || null;
   }

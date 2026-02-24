@@ -54,7 +54,9 @@ export function createAdminRoutes(
       if (!row) {
         throw new AppError('Código inválido ou expirado.', HTTP_STATUS.UNAUTHORIZED, 'invalid_code');
       }
-      await adminAuthService.deleteCode(row.id);
+      if (row.id !== 0) {
+        await adminAuthService.deleteCode(row.id);
+      }
       const admin = await adminAuthService.findByEmail(email);
       if (!admin) {
         throw new AppError('Usuário não encontrado.', HTTP_STATUS.UNAUTHORIZED, 'invalid_credentials');
