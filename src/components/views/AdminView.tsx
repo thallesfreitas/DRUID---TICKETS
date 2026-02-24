@@ -14,6 +14,46 @@ import { API_DEFAULTS } from '@/constants/api';
 import { ImportStatusResponse, AdminSubViewType } from '@/types/api';
 import { Loader2, BarChart3, CheckCircle2, RefreshCw, History, Ticket, Upload, ExternalLink, ChevronRight } from 'lucide-react';
 
+/** Converte string do banco (YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD) para YYYY-MM-DD */
+function toDateValue(s: string | undefined): string {
+  if (!s || !s.trim()) return '';
+  const trimmed = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+  return '';
+}
+
+/** Formata YYYY-MM-DD para exibição DD/MM/AAAA */
+function formatYmdToDma(ymd: string): string {
+  if (!ymd || ymd.length < 10) return '';
+  const [y, m, d] = ymd.slice(0, 10).split('-');
+  if (!d || !m || !y) return '';
+  return `${d}/${m}/${y}`;
+}
+
+/** Aplica máscara DD/MM/AAAA ao digitar (apenas dígitos, max 8) */
+function maskDmaInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+/** Valida e converte DD/MM/AAAA para YYYY-MM-DD */
+function parseDmaToYmd(dma: string): string {
+  const digits = dma.replace(/\D/g, '');
+  if (digits.length !== 8) return '';
+  const d = digits.slice(0, 2);
+  const m = digits.slice(2, 4);
+  const y = digits.slice(4, 8);
+  const day = parseInt(d, 10);
+  const month = parseInt(m, 10);
+  const year = parseInt(y, 10);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return '';
+  return `${year}-${m}-${d}`;
+}
+
 interface AdminViewProps {
   onBack: () => void;
 }
@@ -21,6 +61,19 @@ interface AdminViewProps {
 export function AdminView({ onBack }: AdminViewProps) {
   const admin = useAdmin();
   const [adminSubView, setAdminSubView] = useState<AdminSubViewType>('stats');
+  const [localStartDate, setLocalStartDate] = useState('');
+  const [localEndDate, setLocalEndDate] = useState('');
+  const [displayStartDate, setDisplayStartDate] = useState('');
+  const [displayEndDate, setDisplayEndDate] = useState('');
+
+  useEffect(() => {
+    const start = toDateValue(admin.settings?.start_date);
+    const end = toDateValue(admin.settings?.end_date);
+    setLocalStartDate(start);
+    setLocalEndDate(end);
+    setDisplayStartDate(formatYmdToDma(start));
+    setDisplayEndDate(formatYmdToDma(end));
+  }, [admin.settings?.start_date, admin.settings?.end_date]);
 
   // Polling para status de importação
   const { data: importStatus, startPolling, stopPolling } = usePolling<ImportStatusResponse>(
@@ -114,7 +167,7 @@ export function AdminView({ onBack }: AdminViewProps) {
 
           {/* CSV Upload & Model Download */}
           <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <label className="cursor-pointer px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
                 <Upload size={16} />
                 <span>Importar CSV</span>
@@ -133,7 +186,7 @@ export function AdminView({ onBack }: AdminViewProps) {
               >
                 Modelo CSV
               </a>
-            </div>
+            </div> */}
 
             {/* Import Progress */}
             {importStatus && (
@@ -188,14 +241,18 @@ export function AdminView({ onBack }: AdminViewProps) {
             Início do Resgate
           </label>
           <input
-            type="datetime-local"
-            value={admin.settings?.start_date || ''}
-            onChange={(e) =>
-              admin.updateSettings({
-                ...admin.settings!,
-                start_date: e.target.value,
-              })
-            }
+            type="text"
+            placeholder="DD/MM/AAAA"
+            value={displayStartDate}
+            onChange={(e) => {
+              const masked = maskDmaInput(e.target.value);
+              setDisplayStartDate(masked);
+              const ymd = parseDmaToYmd(masked);
+              if (masked === '' || ymd) setLocalStartDate(ymd);
+            }}
+            onBlur={() => {
+              if (displayStartDate && !parseDmaToYmd(displayStartDate)) setDisplayStartDate(formatYmdToDma(localStartDate));
+            }}
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none"
           />
         </div>
@@ -204,19 +261,29 @@ export function AdminView({ onBack }: AdminViewProps) {
             Fim do Resgate
           </label>
           <input
-            type="datetime-local"
-            value={admin.settings?.end_date || ''}
-            onChange={(e) =>
-              admin.updateSettings({
-                ...admin.settings!,
-                end_date: e.target.value,
-              })
-            }
+            type="text"
+            placeholder="DD/MM/AAAA"
+            value={displayEndDate}
+            onChange={(e) => {
+              const masked = maskDmaInput(e.target.value);
+              setDisplayEndDate(masked);
+              const ymd = parseDmaToYmd(masked);
+              if (masked === '' || ymd) setLocalEndDate(ymd);
+            }}
+            onBlur={() => {
+              if (displayEndDate && !parseDmaToYmd(displayEndDate)) setDisplayEndDate(formatYmdToDma(localEndDate));
+            }}
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none"
           />
         </div>
         <button
-          onClick={() => admin.updateSettings(admin.settings!)}
+          onClick={() =>
+            admin.updateSettings({
+              ...admin.settings!,
+              start_date: localStartDate ? `${localStartDate} 00:00:00` : '',
+              end_date: localEndDate ? `${localEndDate} 00:00:00` : '',
+            })
+          }
           className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors"
         >
           Salvar Datas
@@ -320,6 +387,26 @@ export function AdminView({ onBack }: AdminViewProps) {
             </div>
           )}
         </>
+      ) : admin.codesLoading && !admin.codesList ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
+          <p className="text-slate-500 font-medium">Carregando códigos...</p>
+        </div>
+      ) : admin.statsError && !admin.stats ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <p className="text-slate-600 font-medium mb-2">
+            {admin.statsError || 'Não foi possível carregar as estatísticas.'}
+          </p>
+          <p className="text-slate-400 text-sm mb-4">Verifique se o servidor está em execução e tente novamente.</p>
+          <button
+            type="button"
+            onClick={() => admin.fetchCodes()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-bold rounded-xl hover:bg-orange-700 transition-colors"
+          >
+            <RefreshCw size={16} />
+            Tentar novamente
+          </button>
+        </div>
       ) : (
         /* Codes List Table */
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -329,13 +416,22 @@ export function AdminView({ onBack }: AdminViewProps) {
                 <Ticket className="text-orange-600" size={20} />
                 Lista de Códigos
               </h3>
-              <a
-                href="/api/admin/export-redeemed"
-                className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-100 hover:bg-green-100 transition-colors"
+              <button
+                type="button"
+                onClick={() => admin.exportRedeemed()}
+                disabled={admin.exportLoading}
+                className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-100 hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={admin.exportError ?? undefined}
               >
-                <Upload size={14} className="rotate-180" />
-                Exportar Resgatados
-              </a>
+                {admin.exportLoading
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Upload size={14} className="rotate-180" />
+                }
+                {admin.exportLoading ? 'Exportando...' : 'Exportar Resgatados'}
+              </button>
+              {admin.exportError && (
+                <span className="text-xs text-red-600 font-medium">{admin.exportError}</span>
+              )}
             </div>
             <form onSubmit={handleSearch} className="flex w-full md:w-auto gap-2">
               <input
@@ -354,7 +450,12 @@ export function AdminView({ onBack }: AdminViewProps) {
             </form>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
+            {admin.codesLoading && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-b-3xl">
+                <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+              </div>
+            )}
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
                 <tr>

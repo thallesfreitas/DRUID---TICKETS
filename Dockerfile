@@ -1,25 +1,22 @@
 # Desenvolvimento com Vite HMR + Express Server
-FROM node:22-alpine
+# Estágio builder: deps + código (script import-csv disponível aqui e no app)
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copiar package.json
 COPY package*.json ./
-
-# Instalar dependências
 RUN npm ci
 
-# Copiar código + .env
 COPY . .
 COPY .env* ./
 
-# Expor porta
+# Estágio final: mesma imagem para dev e para rodar import-csv
+FROM builder
+
 EXPOSE 3000
 
-# Variáveis de desenvolvimento
 ENV NODE_ENV=development \
   PORT=3000 \
   CHOKIDAR_USEPOLLING=true
 
-# Comando: servidor Express com Vite middleware (hot-reload)
 CMD ["npm", "run", "dev"]

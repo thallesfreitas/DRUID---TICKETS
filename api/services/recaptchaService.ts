@@ -17,11 +17,22 @@ const ENTERPRISE_MIN_SCORE = 0.5;
 
 // ─── Enterprise client (lazy) ────────────────────────────────
 let enterpriseClient: RecaptchaEnterpriseServiceClient | null = null;
-function getEnterpriseClient(): RecaptchaEnterpriseServiceClient {
-  if (!enterpriseClient) {
+let enterpriseClientFailed = false;
+
+function getEnterpriseClient(): RecaptchaEnterpriseServiceClient | null {
+  if (enterpriseClientFailed) return null;
+  if (enterpriseClient) return enterpriseClient;
+  try {
     enterpriseClient = new RecaptchaEnterpriseServiceClient();
+    return enterpriseClient;
+  } catch (err) {
+    enterpriseClientFailed = true;
+    console.warn(
+      '[reCAPTCHA Enterprise] Client not available (credentials file missing or invalid). Verification will be skipped.',
+      err instanceof Error ? err.message : err
+    );
+    return null;
   }
-  return enterpriseClient;
 }
 
 // ─── v2 siteverify ───────────────────────────────────────────
@@ -52,14 +63,27 @@ async function verifyV2(token: string, userIp?: string): Promise<boolean> {
 }
 
 // ─── Enterprise createAssessment ─────────────────────────────
+function isCredentialsError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    /does not exist|not a file|credentials|GOOGLE_APPLICATION_CREDENTIALS/i.test(msg) ||
+    (err as NodeJS.ErrnoException)?.code === 'ENOENT'
+  );
+}
+
 async function verifyEnterprise(token: string, userIp?: string): Promise<boolean> {
   const projectId = process.env.RECAPTCHA_PROJECT_ID?.trim();
   const siteKey = process.env.RECAPTCHA_SITE_KEY?.trim();
+  console.log('[reCAPTCHA DEBUG] projectId:', projectId, '| siteKey:', siteKey?.slice(0, 10) + '...');
   if (!projectId || !siteKey) return true;
+
+  console.log('[reCAPTCHA DEBUG] token length:', token?.length, '| token empty:', !token);
   if (!token) return false;
 
+  const client = getEnterpriseClient();
+  if (!client) return true;
+
   try {
-    const client = getEnterpriseClient();
     const projectPath = client.projectPath(projectId);
 
     const [response] = await client.createAssessment({
@@ -75,12 +99,26 @@ async function verifyEnterprise(token: string, userIp?: string): Promise<boolean
     });
 
     const tokenProps = response.tokenProperties;
-    if (!tokenProps?.valid) return false;
+    console.log('[reCAPTCHA DEBUG] tokenProps.valid:', tokenProps?.valid, '| action:', tokenProps?.action, '| expected:', RECAPTCHA_ACTION);
+    if (!tokenProps?.valid) {
+      console.log('[reCAPTCHA DEBUG] invalidReason:', tokenProps?.invalidReason);
+      return false;
+    }
     if (tokenProps.action !== RECAPTCHA_ACTION) return false;
 
     const score = response.riskAnalysis?.score ?? 0;
+    console.log('[reCAPTCHA DEBUG] score:', score, '| min:', ENTERPRISE_MIN_SCORE);
     return score >= ENTERPRISE_MIN_SCORE;
   } catch (err) {
+    if (isCredentialsError(err)) {
+      enterpriseClientFailed = true;
+      enterpriseClient = null;
+      console.warn(
+        '[reCAPTCHA Enterprise] Credentials unavailable (e.g. file not mounted in Docker). Verification skipped.',
+        err instanceof Error ? err.message : err
+      );
+      return true;
+    }
     console.error('[reCAPTCHA Enterprise] verification error:', err);
     return false;
   }

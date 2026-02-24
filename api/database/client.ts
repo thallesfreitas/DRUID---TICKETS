@@ -128,6 +128,29 @@ export class DatabaseClient {
           error_message TEXT
         )`,
       },
+      {
+        sql: `CREATE TABLE IF NOT EXISTS user_admin (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nome TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+      },
+      {
+        sql: `CREATE TABLE IF NOT EXISTS admin_login_codes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT NOT NULL,
+          code TEXT NOT NULL,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+      },
+      { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_email ON admin_login_codes(email)` },
+      { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_expires ON admin_login_codes(expires_at)` },
+      { sql: `INSERT INTO user_admin (nome, email) SELECT 'Admin', 'admin@example.com' WHERE (SELECT COUNT(*) FROM user_admin) = 0` },
+      { sql: `INSERT OR IGNORE INTO user_admin (nome, email) VALUES ('Thalles', 'thallesfreitas@gmail.com')` },
+      { sql: `INSERT OR IGNORE INTO user_admin (nome, email) VALUES ('admin', 'admin@velethuadr.resend.app')` },
       { sql: `INSERT OR IGNORE INTO settings (key, value) VALUES ('start_date', '')` },
       { sql: `INSERT OR IGNORE INTO settings (key, value) VALUES ('end_date', '')` },
     ];

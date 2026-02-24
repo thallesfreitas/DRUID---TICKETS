@@ -10,6 +10,8 @@ import { StatsService } from './services/statsService';
 import { BruteForceService } from './services/bruteForceService';
 import { ImportService } from './services/importService';
 import { RedeemService } from './services/redeemService';
+import { AdminAuthService } from './services/adminAuthService';
+import { EmailService } from './services/emailService';
 import { createPublicRoutes } from './routes/public';
 import { createAdminRoutes } from './routes/admin';
 import { errorHandler } from './middleware/errorHandler';
@@ -37,6 +39,8 @@ export async function createApp() {
   const bruteForceService = new BruteForceService(dbClient);
   const importService = new ImportService(dbClient);
   const redeemService = new RedeemService(codeService, settingsService, bruteForceService);
+  const adminAuthService = new AdminAuthService(dbClient);
+  const emailService = new EmailService();
 
   // ===== Registrar rotas =====
   const publicRoutes = createPublicRoutes(
@@ -50,7 +54,9 @@ export async function createApp() {
     codeService,
     settingsService,
     statsService,
-    importService
+    importService,
+    adminAuthService,
+    emailService
   );
 
   app.use('/api', publicRoutes);

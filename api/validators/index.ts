@@ -22,10 +22,21 @@ export const AdminLoginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 });
 
+export const AdminRequestCodeSchema = z.object({
+  email: z.string().email('E-mail inválido').min(1, 'E-mail é obrigatório'),
+});
+
+export const AdminVerifyCodeSchema = z.object({
+  email: z.string().email('E-mail inválido').min(1, 'E-mail é obrigatório'),
+  code: z.string().min(1, 'Código é obrigatório'),
+});
+
 export type RedeemRequest = z.infer<typeof RedeemSchema>;
 export type CsvUploadRequest = z.infer<typeof CsvUploadSchema>;
 export type SettingsRequest = z.infer<typeof SettingsSchema>;
 export type AdminLoginRequest = z.infer<typeof AdminLoginSchema>;
+export type AdminRequestCodeRequest = z.infer<typeof AdminRequestCodeSchema>;
+export type AdminVerifyCodeRequest = z.infer<typeof AdminVerifyCodeSchema>;
 
 /**
  * Validação de linha de CSV

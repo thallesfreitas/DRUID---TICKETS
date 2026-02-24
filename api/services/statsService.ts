@@ -21,8 +21,9 @@ export class StatsService {
       used_at: string;
     }>(QUERIES.GET_RECENT_REDEEMS);
 
-    const total = totalResult[0]?.count || 0;
-    const used = usedResult[0]?.count || 0;
+    // Coerce to number: DB/driver may return string; support large counts (e.g. 300k+)
+    const total = Math.max(0, Number(totalResult[0]?.count ?? 0));
+    const used = Math.max(0, Number(usedResult[0]?.count ?? 0));
 
     return {
       total,

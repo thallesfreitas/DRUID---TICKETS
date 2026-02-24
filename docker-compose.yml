@@ -39,12 +39,34 @@ services:
       # SQLite no host: mesmo arquivo para o app e para SQLPro/outros clientes
       - ./data:/app/data
       # Credenciais Google (reCAPTCHA Enterprise, etc.)
+      # - ./gcloud-credentials.json:/app/gcloud-credentials.json:ro
       - ./gcloud-credentials.json:/app/gcloud-credentials.json:ro
     networks:
       - promocode-network
     stdin_open: true
     tty: true
     restart: unless-stopped
+
+  # ===== Importar CSV (profile tools)
+  # Uso: docker compose --profile tools run --rm import-csv
+  #      Coloque o CSV em ./data/codes_1000.csv ou: ... run --rm import-csv npm run import-csv /app/data/outro.csv
+  import-csv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    container_name: promocode-import-csv
+    environment:
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-file:/app/data/promo.db}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+    volumes:
+      - ./data:/app/data
+      - .:/app
+      - /app/node_modules
+    command: ["npm", "run", "import-csv", "/app/data/codes_1000.csv"]
+    networks:
+      - promocode-network
 
   # ===== Redis para Filas/Cache =====
   redis:

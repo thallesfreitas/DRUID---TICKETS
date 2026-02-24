@@ -4,6 +4,14 @@
 
 import { ApiError } from '../../types/api';
 import { TIMEOUTS } from '../../constants/api';
+import { getAdminToken } from '../../lib/adminAuth';
+
+const ADMIN_AUTH_PATHS = ['/api/admin/request-code', '/api/admin/verify-code'];
+
+function isAdminProtectedPath(path: string): boolean {
+  if (!path.startsWith('/api/admin/')) return false;
+  return !ADMIN_AUTH_PATHS.some((p) => path.startsWith(p));
+}
 
 export class ApiClient {
   /**
@@ -17,12 +25,18 @@ export class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.FETCH);
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (isAdminProtectedPath(path)) {
+      const token = getAdminToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch(path, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });

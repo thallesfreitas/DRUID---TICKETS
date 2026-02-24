@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: true,
       },
+      allowedHosts: ['codepromo.ngrok.dev'],
     },
   };
 });
+

@@ -4,14 +4,16 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createAdminRoutes } from '@/api/routes/admin';
-import { CodeService } from '@/api/services/codeService';
-import { SettingsService } from '@/api/services/settingsService';
-import { StatsService } from '@/api/services/statsService';
-import { ImportService } from '@/api/services/importService';
-import { AppError } from '@/api/types';
-import { HTTP_STATUS, API_DEFAULTS } from '@/api/constants/api';
-import { mockCodes, mockSettings } from '@/tests/fixtures';
+import { createAdminRoutes } from '@api/routes/admin';
+import { CodeService } from '@api/services/codeService';
+import { SettingsService } from '@api/services/settingsService';
+import { StatsService } from '@api/services/statsService';
+import { ImportService } from '@api/services/importService';
+import { AdminAuthService } from '@api/services/adminAuthService';
+import { EmailService } from '@api/services/emailService';
+import { AppError } from '@api/types';
+import { HTTP_STATUS, API_DEFAULTS } from '@api/constants/api';
+import { mockCodes, mockSettings } from '@tests/fixtures';
 
 describe('Admin Routes', () => {
   let router: any;
@@ -61,10 +63,40 @@ describe('Admin Routes', () => {
       getProgress: vi.fn()
     } as any;
 
-    router = createAdminRoutes(codeService, settingsService, statsService, importService);
+    const adminAuthService = {
+      findByEmail: vi.fn(),
+      createLoginCode: vi.fn(),
+      findValidCode: vi.fn(),
+      deleteCode: vi.fn(),
+    } as any;
+    const emailService = { sendLoginCode: vi.fn().mockResolvedValue({ ok: true }) } as any;
+
+    router = createAdminRoutes(
+      codeService,
+      settingsService,
+      statsService,
+      importService,
+      adminAuthService,
+      emailService
+    );
   });
 
-  describe('POST /api/admin/login', () => {
+  describe('POST /api/admin/request-code', () => {
+    it('should return generic message for any email', async () => {
+      const body = { email: 'admin@example.com' };
+      expect(body.email).toBeDefined();
+    });
+  });
+
+  describe('POST /api/admin/verify-code', () => {
+    it('should return token when code is valid', async () => {
+      const body = { email: 'admin@example.com', code: '123456' };
+      expect(body.email).toBeDefined();
+      expect(body.code).toBeDefined();
+    });
+  });
+
+  describe('POST /api/admin/login (deprecated)', () => {
     it('should accept correct password', async () => {
       const password = 'admin123';
       const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';

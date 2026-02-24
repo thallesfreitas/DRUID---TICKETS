@@ -10,7 +10,8 @@ export const API_PATHS = {
     STATS: '/api/stats',
   },
   ADMIN: {
-    LOGIN: '/api/admin/login',
+    REQUEST_CODE: '/api/admin/request-code',
+    VERIFY_CODE: '/api/admin/verify-code',
     CODES: '/api/admin/codes',
     SETTINGS: '/api/admin/settings',
     UPLOAD_CSV: '/api/admin/upload-csv',

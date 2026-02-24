@@ -37,7 +37,9 @@ export interface UseAdminState {
   importLoading: boolean;
 
   // Export
-  exportRedeemed: () => void;
+  exportRedeemed: () => Promise<void>;
+  exportLoading: boolean;
+  exportError: string | null;
 }
 
 export function useAdmin(): UseAdminState {
@@ -45,13 +47,15 @@ export function useAdmin(): UseAdminState {
   const [codesSearch, setCodesSearch] = useState('');
   const [importProgress, setImportProgress] = useState<ImportStatusResponse | null>(null);
   const [importLoading, setImportLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Fetch settings
   const {
     data: settings,
     loading: settingsLoading,
     refetch: refetchSettings,
-  } = useFetch(() => adminService.getSettings(), [], false);
+  } = useFetch(() => adminService.getSettings(), [], true);
 
   // Fetch codes
   const {
@@ -132,6 +136,18 @@ export function useAdmin(): UseAdminState {
     uploadCsv,
     importProgress,
     importLoading,
-    exportRedeemed: () => adminService.exportRedeemed(),
+    exportRedeemed: useCallback(async () => {
+      setExportLoading(true);
+      setExportError(null);
+      try {
+        await adminService.exportRedeemed();
+      } catch (err) {
+        setExportError(err instanceof Error ? err.message : 'Erro ao exportar.');
+      } finally {
+        setExportLoading(false);
+      }
+    }, []),
+    exportLoading,
+    exportError,
   };
 }

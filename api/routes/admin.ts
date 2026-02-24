@@ -7,35 +7,64 @@ import { CodeService } from '../services/codeService';
 import { SettingsService } from '../services/settingsService';
 import { StatsService } from '../services/statsService';
 import { ImportService } from '../services/importService';
-import { CsvUploadSchema, SettingsSchema, AdminLoginSchema } from '../validators';
+import { AdminAuthService } from '../services/adminAuthService';
+import { EmailService } from '../services/emailService';
+import { CsvUploadSchema, SettingsSchema, AdminRequestCodeSchema, AdminVerifyCodeSchema } from '../validators';
 import { asyncHandler } from '../middleware/errorHandler';
-import { AppError } from '../types';
+import { adminAuth, signAdminToken } from '../middleware/adminAuth';
+import { AppError, SettingsData } from '../types';
 import { HTTP_STATUS, API_DEFAULTS } from '../constants/api';
-import { validateCsvLines } from '../validators';
 
 export function createAdminRoutes(
   codeService: CodeService,
   settingsService: SettingsService,
   statsService: StatsService,
-  importService: ImportService
+  importService: ImportService,
+  adminAuthService: AdminAuthService,
+  emailService: EmailService
 ): Router {
   const router = Router();
 
   /**
-   * POST /api/admin/login - Autenticação admin
+   * POST /api/admin/request-code - Solicita código de login por e-mail
    */
   router.post(
-    '/login',
+    '/request-code',
     asyncHandler(async (req, res) => {
-      const { password } = AdminLoginSchema.parse(req.body);
-
-      if (password === (process.env.ADMIN_PASSWORD || 'admin123')) {
-        res.json({ success: true, token: 'mock-jwt-token' });
-      } else {
-        throw new AppError('Senha incorreta.', HTTP_STATUS.UNAUTHORIZED, 'invalid_credentials');
+      const { email } = AdminRequestCodeSchema.parse(req.body);
+      const admin = await adminAuthService.findByEmail(email);
+      if (!admin) {
+        res.json({ message: 'Se o e-mail estiver cadastrado, você receberá um código em instantes.' });
+        return;
       }
+      const { code } = await adminAuthService.createLoginCode(email);
+      await emailService.sendLoginCode(email, code);
+      res.json({ message: 'Se o e-mail estiver cadastrado, você receberá um código em instantes.' });
     })
   );
+
+  /**
+   * POST /api/admin/verify-code - Valida código e retorna token
+   */
+  router.post(
+    '/verify-code',
+    asyncHandler(async (req, res) => {
+      const { email, code } = AdminVerifyCodeSchema.parse(req.body);
+      const row = await adminAuthService.findValidCode(email, code);
+      if (!row) {
+        throw new AppError('Código inválido ou expirado.', HTTP_STATUS.UNAUTHORIZED, 'invalid_code');
+      }
+      await adminAuthService.deleteCode(row.id);
+      const admin = await adminAuthService.findByEmail(email);
+      if (!admin) {
+        throw new AppError('Usuário não encontrado.', HTTP_STATUS.UNAUTHORIZED, 'invalid_credentials');
+      }
+      const token = signAdminToken(admin.id, admin.email);
+      res.json({ success: true, token });
+    })
+  );
+
+  router.use(adminAuth);
 
   /**
    * GET /api/admin/codes - Listar códigos com paginação
@@ -57,7 +86,7 @@ export function createAdminRoutes(
   router.post(
     '/settings',
     asyncHandler(async (req, res) => {
-      const settings = SettingsSchema.parse(req.body);
+      const settings = SettingsSchema.parse(req.body) as SettingsData;
       await settingsService.updateMany(settings);
       res.json({ success: true });
     })

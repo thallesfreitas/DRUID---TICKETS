@@ -58,7 +58,7 @@ export function RedeemForm({
   const getButtonText = () => {
     if (isEnded) return 'RESGATES ENCERRADOS';
     if (!isStarted) {
-      if (startDate) return `INÍCIO EM ${new Date(startDate).toLocaleString()}`;
+      if (startDate) return `INÍCIO EM ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
       return 'Aguarde o início';
     }
     return loading ? 'Processando...' : 'Validar Código';

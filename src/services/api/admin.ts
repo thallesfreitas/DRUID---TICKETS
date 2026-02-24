@@ -5,9 +5,10 @@
 import { ApiClient } from './client';
 import { Settings, Stats, PaginatedCodes, CsvUploadResponse, ImportStatusResponse } from '../../types/api';
 import { API_PATHS } from '../../constants/api';
+import { getAdminToken } from '../../lib/adminAuth';
 
 export class AdminService {
-  constructor(private client: ApiClient) {}
+  constructor(private client: ApiClient) { }
 
   /**
    * Obtém configurações (início/fim do resgate)
@@ -24,10 +25,20 @@ export class AdminService {
   }
 
   /**
-   * Faz login admin
+   * Solicita código de login por e-mail
    */
-  async login(password: string): Promise<{ success: boolean; token: string }> {
-    return this.client.post(API_PATHS.ADMIN.LOGIN, { password });
+  async requestCode(email: string): Promise<{ message: string }> {
+    return this.client.post<{ message: string }>(API_PATHS.ADMIN.REQUEST_CODE, { email });
+  }
+
+  /**
+   * Valida código e retorna token
+   */
+  async verifyCode(email: string, code: string): Promise<{ success: boolean; token: string }> {
+    return this.client.post<{ success: boolean; token: string }>(API_PATHS.ADMIN.VERIFY_CODE, {
+      email,
+      code,
+    });
   }
 
   /**
@@ -69,9 +80,20 @@ export class AdminService {
   }
 
   /**
-   * Inicia download de exportação
+   * Inicia download de exportação (com token no header)
    */
-  exportRedeemed(): void {
-    window.location.href = API_PATHS.ADMIN.EXPORT_REDEEMED;
+  async exportRedeemed(): Promise<void> {
+    const token = getAdminToken();
+    const res = await fetch(API_PATHS.ADMIN.EXPORT_REDEEMED, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Falha ao exportar.');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'resgates.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
