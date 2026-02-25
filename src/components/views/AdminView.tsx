@@ -23,6 +23,14 @@ function toDateValue(s: string | undefined): string {
   return '';
 }
 
+// used_at vem em UTC do backend; parse como UTC e formata em Brasília
+function formatUsedAtBrasilia(usedAt: string | null | undefined): string {
+  if (!usedAt || !usedAt.trim()) return '-';
+  const t = usedAt.trim();
+  const asUtc = /Z$|[+-]\d{2}:?\d{2}$/.test(t) ? t : t.replace(' ', 'T') + 'Z';
+  return new Date(asUtc).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
 interface AdminViewProps {
   onBack: () => void;
 }
@@ -332,7 +340,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          {new Date(r.used_at).toLocaleString()}
+                          {formatUsedAtBrasilia(r.used_at)}
                         </p>
                         <ChevronRight size={16} className="text-slate-300 ml-auto" />
                       </div>
@@ -462,7 +470,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-400">
-                      {c.used_at ? new Date(c.used_at).toLocaleString() : '-'}
+                      {formatUsedAtBrasilia(c.used_at)}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {c.ip_address || '-'}

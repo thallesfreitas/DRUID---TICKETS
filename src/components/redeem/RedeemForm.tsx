@@ -130,6 +130,15 @@ export function RedeemForm({
       <p className="text-[11px] text-center text-slate-400 mt-6 px-4 leading-relaxed">
         Códigos de uso único. Digite o código em letras MAIÚSCULAS, exatamente como impresso no seu cupom fiscal. Em caso de dúvidas, entre em contato com o suporte.
       </p>
+      {isEnterprise && (
+        <p className="text-[10px] text-center text-slate-400 mt-2 px-4">
+          Protegido por reCAPTCHA Enterprise. Aplicam-se a{' '}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Política de Privacidade</a>
+          {' '}e os{' '}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Termos de Serviço</a>
+          {' '}do Google.
+        </p>
+      )}
     </div>
   );
 }

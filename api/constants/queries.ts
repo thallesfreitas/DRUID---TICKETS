@@ -6,8 +6,8 @@ export const QUERIES = {
   // ===== CODES =====
   GET_CODE: 'SELECT * FROM codes WHERE code = ?',
   GET_CODE_BY_ID: 'SELECT * FROM codes WHERE id = ?',
-  GET_ALL_CODES: 'SELECT * FROM codes ORDER BY id DESC LIMIT ? OFFSET ?',
-  SEARCH_CODES: 'SELECT * FROM codes WHERE code LIKE ? OR ip_address LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?',
+  GET_ALL_CODES: 'SELECT * FROM codes ORDER BY id ASC LIMIT ? OFFSET ?',
+  SEARCH_CODES: 'SELECT * FROM codes WHERE code LIKE ? OR ip_address LIKE ? ORDER BY id ASC LIMIT ? OFFSET ?',
   COUNT_ALL_CODES: 'SELECT COUNT(*) as count FROM codes',
   COUNT_SEARCH_CODES: 'SELECT COUNT(*) as count FROM codes WHERE code LIKE ? OR ip_address LIKE ?',
   UPDATE_CODE_USED: 'UPDATE codes SET is_used = 1, used_at = CURRENT_TIMESTAMP, ip_address = ? WHERE id = ?',
@@ -39,7 +39,7 @@ export const QUERIES = {
   UPDATE_IMPORT_JOB_FAILED: `UPDATE import_jobs SET status = 'failed', completed_at = CURRENT_TIMESTAMP, error_message = ? WHERE id = ?`,
 
   // ===== STATS =====
-  COUNT_TOTAL_CODES: 'SELECT COUNT(*) as count FROM codes',
+  COUNT_TOTAL_CODES: 'SELECT COUNT(*) as count FROM codes ORDER BY used_at DESC',
   COUNT_USED_CODES: 'SELECT COUNT(*) as count FROM codes WHERE is_used = 1',
   GET_RECENT_REDEEMS: `
     SELECT code, ip_address, used_at

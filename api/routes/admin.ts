@@ -158,10 +158,19 @@ export function createAdminRoutes(
     asyncHandler(async (req, res) => {
       const rows = await codeService.getRedeemedForExport();
 
-      // Converter para CSV
+      // used_at vem em UTC do banco; parse como UTC e formata em Brasília (DD/MM/YYYY HH:mm:ss)
+      const formatDateBrasilia = (isoOrDateTime: string | null): string => {
+        if (!isoOrDateTime || !String(isoOrDateTime).trim()) return '';
+        const t = String(isoOrDateTime).trim();
+        const asUtc = /Z$|[+-]\d{2}:?\d{2}$/.test(t) ? t : t.replace(' ', 'T') + 'Z';
+        const s = new Date(asUtc).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        return s.replace(', ', ' ');
+      };
+
       let csv = 'codigo,link,data,ip\n';
       rows.forEach((row: any) => {
-        csv += `${row.code},${row.link},${row.used_at},${row.ip_address}\n`;
+        const dataBrasilia = formatDateBrasilia(row.used_at);
+        csv += `${row.code},${row.link},${dataBrasilia},${row.ip_address || ''}\n`;
       });
 
       res.setHeader('Content-Type', 'text/csv');

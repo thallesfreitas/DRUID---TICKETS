@@ -20,7 +20,7 @@ export function LegalView({ title, content, onBack }: LegalViewProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100"
+      className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-[500px]:mt-24"
     >
       <h2 className="text-3xl font-black text-slate-900 mb-6">{title}</h2>
 

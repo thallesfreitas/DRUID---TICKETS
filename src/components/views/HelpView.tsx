@@ -3,7 +3,6 @@
  * FAQ and help information page
  */
 
-import React from 'react';
 import { LegalView } from './LegalView';
 
 interface HelpViewProps {

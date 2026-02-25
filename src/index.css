@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+/* Oculta o selo flutuante do reCAPTCHA Enterprise (aviso exibido no formulário) */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
