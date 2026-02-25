@@ -103,9 +103,15 @@ describe('AdminView', () => {
     const user = userEvent.setup();
     render(<AdminView onBack={vi.fn()} />);
 
-    const [startInput] = screen.getAllByPlaceholderText('DD/MM/AAAA');
-    await user.clear(startInput);
-    await user.type(startInput, '15032026');
+    await user.click(screen.getByLabelText(/início do resgate/i));
+    const nextMonthBtn = screen.getByLabelText(/próximo mês/i);
+    for (let i = 0; i < 27; i++) {
+      await user.click(nextMonthBtn);
+    }
+    await waitFor(() => {
+      expect(screen.getByText(/março 2026/i)).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: '15' }));
 
     await user.click(screen.getByRole('button', { name: 'Salvar Datas' }));
 

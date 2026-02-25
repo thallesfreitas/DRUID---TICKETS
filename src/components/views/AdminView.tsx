@@ -12,46 +12,15 @@ import { AdminService } from '@/services/api/admin';
 import { apiClient } from '@/services/api/client';
 import { API_DEFAULTS } from '@/constants/api';
 import { ImportStatusResponse, AdminSubViewType } from '@/types/api';
-import { Loader2, BarChart3, CheckCircle2, RefreshCw, History, Ticket, Upload, ExternalLink, ChevronRight } from 'lucide-react';
+import { Loader2, BarChart3, CheckCircle2, RefreshCw, History, Ticket, Upload, ExternalLink, ChevronRight, CircleAlert } from 'lucide-react';
+import { DatePicker } from '@/components/DatePicker';
 
-/** Converte string do banco (YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD) para YYYY-MM-DD */
+// Converte string do banco (YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD) para YYYY-MM-DD (valor do date input)
 function toDateValue(s: string | undefined): string {
   if (!s || !s.trim()) return '';
   const trimmed = s.trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
   return '';
-}
-
-/** Formata YYYY-MM-DD para exibição DD/MM/AAAA */
-function formatYmdToDma(ymd: string): string {
-  if (!ymd || ymd.length < 10) return '';
-  const [y, m, d] = ymd.slice(0, 10).split('-');
-  if (!d || !m || !y) return '';
-  return `${d}/${m}/${y}`;
-}
-
-/** Aplica máscara DD/MM/AAAA ao digitar (apenas dígitos, max 8) */
-function maskDmaInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-/** Valida e converte DD/MM/AAAA para YYYY-MM-DD */
-function parseDmaToYmd(dma: string): string {
-  const digits = dma.replace(/\D/g, '');
-  if (digits.length !== 8) return '';
-  const d = digits.slice(0, 2);
-  const m = digits.slice(2, 4);
-  const y = digits.slice(4, 8);
-  const day = parseInt(d, 10);
-  const month = parseInt(m, 10);
-  const year = parseInt(y, 10);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return '';
-  return `${year}-${m}-${d}`;
 }
 
 interface AdminViewProps {
@@ -63,17 +32,18 @@ export function AdminView({ onBack }: AdminViewProps) {
   const [adminSubView, setAdminSubView] = useState<AdminSubViewType>('stats');
   const [localStartDate, setLocalStartDate] = useState('');
   const [localEndDate, setLocalEndDate] = useState('');
-  const [displayStartDate, setDisplayStartDate] = useState('');
-  const [displayEndDate, setDisplayEndDate] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     const start = toDateValue(admin.settings?.start_date);
     const end = toDateValue(admin.settings?.end_date);
     setLocalStartDate(start);
     setLocalEndDate(end);
-    setDisplayStartDate(formatYmdToDma(start));
-    setDisplayEndDate(formatYmdToDma(end));
   }, [admin.settings?.start_date, admin.settings?.end_date]);
+
+  const savedStart = toDateValue(admin.settings?.start_date);
+  const savedEnd = toDateValue(admin.settings?.end_date);
+  const datesDirty = localStartDate !== savedStart || localEndDate !== savedEnd;
 
   // Polling para status de importação
   const { data: importStatus, startPolling, stopPolling } = usePolling<ImportStatusResponse>(
@@ -234,57 +204,63 @@ export function AdminView({ onBack }: AdminViewProps) {
         </div>
       </div>
 
+      {/* Alerta: datas alteradas (não salvas) */}
+      {datesDirty && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800"
+        >
+          <CircleAlert className="shrink-0 text-amber-600" size={20} />
+          <p className="text-sm font-medium">
+            As datas foram alteradas. Clique em <strong>Salvar Datas</strong> para aplicar.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Alerta: sucesso ao salvar */}
+      {saveSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-800"
+        >
+          <CheckCircle2 className="shrink-0 text-green-600" size={20} />
+          <p className="text-sm font-medium">Datas salvas com sucesso.</p>
+        </motion.div>
+      )}
+
       {/* Settings Section */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-        <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            Início do Resgate
-          </label>
-          <input
-            type="text"
-            placeholder="DD/MM/AAAA"
-            value={displayStartDate}
-            onChange={(e) => {
-              const masked = maskDmaInput(e.target.value);
-              setDisplayStartDate(masked);
-              const ymd = parseDmaToYmd(masked);
-              if (masked === '' || ymd) setLocalStartDate(ymd);
-            }}
-            onBlur={() => {
-              if (displayStartDate && !parseDmaToYmd(displayStartDate)) setDisplayStartDate(formatYmdToDma(localStartDate));
-            }}
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            Fim do Resgate
-          </label>
-          <input
-            type="text"
-            placeholder="DD/MM/AAAA"
-            value={displayEndDate}
-            onChange={(e) => {
-              const masked = maskDmaInput(e.target.value);
-              setDisplayEndDate(masked);
-              const ymd = parseDmaToYmd(masked);
-              if (masked === '' || ymd) setLocalEndDate(ymd);
-            }}
-            onBlur={() => {
-              if (displayEndDate && !parseDmaToYmd(displayEndDate)) setDisplayEndDate(formatYmdToDma(localEndDate));
-            }}
-            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none"
-          />
-        </div>
+        <DatePicker
+          id="admin-start-date"
+          value={localStartDate}
+          onChange={setLocalStartDate}
+          placeholder="Selecione a data"
+          label="Início do Resgate"
+          aria-label="Início do Resgate"
+        />
+        <DatePicker
+          id="admin-end-date"
+          value={localEndDate}
+          onChange={setLocalEndDate}
+          placeholder="Selecione a data"
+          label="Fim do Resgate"
+          aria-label="Fim do Resgate"
+        />
         <button
-          onClick={() =>
-            admin.updateSettings({
+          onClick={async () => {
+            setSaveSuccess(false);
+            await admin.updateSettings({
               ...admin.settings!,
               start_date: localStartDate ? `${localStartDate} 00:00:00` : '',
               end_date: localEndDate ? `${localEndDate} 00:00:00` : '',
-            })
-          }
-          className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors"
+            });
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 4000);
+          }}
+          disabled={!datesDirty}
+          className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Salvar Datas
         </button>
