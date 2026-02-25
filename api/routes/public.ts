@@ -54,7 +54,6 @@ export function createPublicRoutes(
     asyncHandler(async (req, res) => {
       const { code, captchaToken } = RedeemSchema.parse(req.body);
       const ip = extractIp(req);
-
       const captchaOk = await verifyRecaptcha(captchaToken, ip);
       if (!captchaOk) {
         throw new AppError(

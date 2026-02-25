@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.RECAPTCHA_SITE_KEY': JSON.stringify(env.RECAPTCHA_SITE_KEY),
-      'process.env.RECAPTCHA_MODE': JSON.stringify(env.RECAPTCHA_MODE || 'v2'),
+      'process.env.TURNSTILE_SITE_KEY': JSON.stringify(env.TURNSTILE_SITE_KEY),
+      'process.env.TURNSTILE_SECRET_KEY': JSON.stringify(env.TURNSTILE_SECRET_KEY),
     },
     resolve: {
       alias: {

@@ -4,7 +4,7 @@
  * Integrado com verificação humana via Turnstile/recaptcha hooks
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 
@@ -37,23 +37,49 @@ export function RedeemForm({
   recaptchaToken,
   onRecaptchaRender,
 }: RedeemFormProps) {
+  const [showTurnstile, setShowTurnstile] = useState(false);
   const renderedRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const autoSubmittedRef = useRef(false);
   const isEnterprise = recaptchaMode === 'enterprise';
 
-  // Renderizar widget v2 quando pronto
+  // Renderizar widget Turnstile só quando o container for exibido (após primeiro clique)
   useEffect(() => {
-    if (!isEnterprise && recaptchaReady && !renderedRef.current && onRecaptchaRender) {
+    if (!showTurnstile || isEnterprise) return;
+    if (recaptchaReady && !renderedRef.current && onRecaptchaRender) {
       renderedRef.current = true;
       onRecaptchaRender('recaptcha-container');
     }
-  }, [recaptchaReady, onRecaptchaRender, isEnterprise]);
+  }, [showTurnstile, recaptchaReady, onRecaptchaRender, isEnterprise]);
+
+  // Quando o token é limpo (ex.: expirou), permite novo envio automático no próximo token
+  useEffect(() => {
+    if (!recaptchaToken) autoSubmittedRef.current = false;
+  }, [recaptchaToken]);
+
+  // Após validação do Turnstile, envia o formulário automaticamente (sem segundo clique)
+  useEffect(() => {
+    if (!showTurnstile || isEnterprise || !recaptchaToken || loading || autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
+  }, [showTurnstile, recaptchaToken, isEnterprise, loading]);
 
   const isDisabled = !isStarted || isEnded;
 
-  // Enterprise: basta estar ready; v2: precisa do token
   const isSubmitDisabled = isEnterprise
     ? loading || isDisabled || !recaptchaReady
-    : loading || isDisabled || !recaptchaToken;
+    : loading || isDisabled || (showTurnstile ? !recaptchaToken : false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    if (!showTurnstile) {
+      e.preventDefault();
+      if (code.trim()) setShowTurnstile(true);
+      return;
+    }
+    onSubmit(e);
+  };
 
   const getButtonText = () => {
     if (isEnded) return 'RESGATES ENCERRADOS';
@@ -75,7 +101,7 @@ export function RedeemForm({
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -103,17 +129,16 @@ export function RedeemForm({
           />
         </div>
 
-        {/* Widget de verificação humana (v2/Turnstile) */}
-        {!isEnterprise && (
-          <div className="flex items-center justify-center">
-            <div id="recaptcha-container"></div>
+        {/* Turnstile aparece só após o primeiro clique em Validar Código */}
+        {!isEnterprise && showTurnstile && (
+          <div className="flex items-center justify-center w-full">
+            <div id="recaptcha-container" className="cf-turnstile" data-size="compact" />
           </div>
         )}
-
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || !isStarted || isEnded}
+          disabled={isSubmitDisabled}
           className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center space-x-2 active:scale-95"
         >
           {loading ? (
@@ -127,10 +152,10 @@ export function RedeemForm({
         </button>
       </form>
 
-      <p className="text-[11px] text-center text-slate-400 mt-6 px-4 leading-relaxed">
+      <p className="text-[11px] text-center text-slate-500 mt-6 px-4 leading-relaxed">
         Códigos de uso único. Digite o código em letras MAIÚSCULAS, exatamente como impresso no seu cupom fiscal. Em caso de dúvidas, entre em contato com o suporte.
       </p>
-      {isEnterprise && (
+      {/* {isEnterprise && (
         <p className="text-[10px] text-center text-slate-400 mt-2 px-4">
           Protegido por reCAPTCHA Enterprise. Aplicam-se a{' '}
           <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Política de Privacidade</a>
@@ -138,7 +163,7 @@ export function RedeemForm({
           <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Termos de Serviço</a>
           {' '}do Google.
         </p>
-      )}
+      )} */}
     </div>
   );
 }

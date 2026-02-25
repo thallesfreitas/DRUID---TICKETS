@@ -23,8 +23,8 @@ declare global {
   }
 }
 
-// Reutiliza a mesma env para não exigir mudança de configuração.
-const SITE_KEY = process.env.RECAPTCHA_SITE_KEY || '';
+// Usa chaves específicas do Turnstile, com fallback para nomes antigos de reCAPTCHA.
+const SITE_KEY = process.env.TURNSTILE_SITE_KEY || process.env.RECAPTCHA_SITE_KEY || '';
 
 export function useRecaptchaV2() {
   const [token, setToken] = useState<string>('');
@@ -32,6 +32,7 @@ export function useRecaptchaV2() {
   const widgetIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
+    console.log('SITE_KEY', SITE_KEY);
     if (!SITE_KEY) return;
 
     if (window.turnstile) {
