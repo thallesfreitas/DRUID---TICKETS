@@ -19,7 +19,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white p-8 rounded-3xl shadow-xl shadow-green-100/50 border border-green-100 text-center"
+      className="bg-white p-8 rounded-3xl shadow-xl shadow-green-100/50 border border-green-100 text-center "
     >
       {/* Success Icon */}
       <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -44,10 +44,6 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
 
       {/* Link Display Box */}
       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 text-left">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-          Seu Link de Prêmio
-        </p>
-        <p className="text-orange-600 font-bold break-all mb-4">{link}</p>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
@@ -58,18 +54,18 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
             rel="noopener noreferrer"
             className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-orange-100"
           >
-            <ExternalLink size={18} />
-            <span>Acessar Prêmio</span>
+            <ExternalLink className='max-[360px]:w-4 max-[360px]:h-4' size={18} />
+            <span className='max-[360px]:text-sm'>Acessar Prêmio</span>
           </a>
 
           {/* Copy and WhatsApp Buttons */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 grid-cols-2 max-[360px]:grid-cols-1">
             <button
               onClick={onCopy}
               className="flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3.5 rounded-xl font-bold transition-all shadow-sm"
             >
               <Copy size={18} />
-              <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+              <span className='max-[360px]:text-sm'>{copied ? 'Copiado!' : 'Copiar'}</span>
             </button>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
@@ -80,7 +76,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
               className="flex items-center justify-center space-x-2 bg-[#25D366] hover:bg-[#128C7E] text-white py-3.5 rounded-xl font-bold transition-all shadow-sm"
             >
               <Mail size={18} />
-              <span>WhatsApp</span>
+              <span className='max-[360px]:text-sm'>WhatsApp</span>
             </a>
           </div>
         </div>

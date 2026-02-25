@@ -1,4 +1,4 @@
-import { Mail } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 export function FloatingSupport() {
   return (
@@ -11,16 +11,9 @@ export function FloatingSupport() {
         title="Suporte via WhatsApp"
         aria-label="WhatsApp"
       >
-        <Mail size={24} />
+        <MessageCircle size={24} fill='currentColor' />
       </a>
-      <a
-        href="mailto:suporte@promocode.com"
-        className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
-        title="Suporte via E-mail"
-        aria-label="E-mail"
-      >
-        <Mail size={24} />
-      </a>
+
     </div>
   );
 }

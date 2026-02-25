@@ -53,7 +53,7 @@ export function RedeemView() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md pt-24"
       >
         <RedeemSuccess
           link={redeem.successData.link}
@@ -71,7 +71,7 @@ export function RedeemView() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-md"
+      className="w-full max-w-md pt-24"
     >
       <RedeemForm
         code={redeem.code}

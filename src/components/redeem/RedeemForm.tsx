@@ -71,7 +71,7 @@ export function RedeemForm({
           Resgatar Código
         </h2>
         <p className="text-slate-500 mt-2">
-          Insira seu código único para acessar seu benefício exclusivo.
+          Insira o código impresso no cupom fiscal de sua compra no BK para ter acesso ao prêmio único e exclusivo.
         </p>
       </div>
 
@@ -113,8 +113,8 @@ export function RedeemForm({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitDisabled}
-          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-200 transition-all flex items-center justify-center space-x-2 active:scale-95"
+          disabled={loading || !isStarted || isEnded}
+          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center space-x-2 active:scale-95"
         >
           {loading ? (
             <Loader2 className="w-6 h-6 animate-spin" />
@@ -128,8 +128,7 @@ export function RedeemForm({
       </form>
 
       <p className="text-[11px] text-center text-slate-400 mt-6 px-4 leading-relaxed">
-        Os códigos são de uso único e sensíveis a maiúsculas. Em caso de dúvidas, entre
-        em contato com o suporte.
+        Códigos de uso único. Digite o código em letras MAIÚSCULAS, exatamente como impresso no seu cupom fiscal. Em caso de dúvidas, entre em contato com o suporte.
       </p>
     </div>
   );

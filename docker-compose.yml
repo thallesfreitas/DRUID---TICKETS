@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: promocode-app
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -19,7 +19,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       # HMR (Hot Module Replacement)
       - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
-      - VITE_HMR_PORT=${VITE_HMR_PORT:-3000}
+      - VITE_HMR_PORT=${VITE_HMR_PORT:-3001}
       # reCAPTCHA (v2 ou enterprise, controlado por RECAPTCHA_MODE)
       - RECAPTCHA_MODE=${RECAPTCHA_MODE:-v2}
       - RECAPTCHA_SITE_KEY=${RECAPTCHA_SITE_KEY:-}

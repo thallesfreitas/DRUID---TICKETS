@@ -1,5 +1,3 @@
-import { Ticket, LayoutDashboard } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   onLogoClick?: () => void;
@@ -9,28 +7,33 @@ interface HeaderProps {
 
 export function Header({ onLogoClick, onAdminClick, showAdminButton = false }: HeaderProps) {
   return (
-    <header className="w-full py-6 px-6 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-50">
-      <Link
-        to="/"
-        onClick={onLogoClick}
-        className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-        aria-label="Home"
-      >
-        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-200">
-          <Ticket className="text-white w-6 h-6" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">PromoCode</h1>
-      </Link>
-      {showAdminButton && (
-        <Link
-          to="/admin"
-          onClick={onAdminClick}
-          className="p-2 text-slate-400 hover:text-orange-600 transition-colors rounded-lg hover:bg-orange-50"
-          aria-label="Admin Panel"
-        >
-          <LayoutDashboard size={20} />
-        </Link>
-      )}
+    <header className="fixed top-0 left-0 right-0 py-4 px-6 bg-[#f7f9fb] border-b border-slate-200/60 shadow-sm z-50">
+      <div className="max-w-md mx-auto flex justify-between items-center">
+        <button onClick={onLogoClick} className="flex items-center hover:opacity-80 transition-opacity">
+          {/* Removemos o divisor e usamos um gap generoso para separação visual clara */}
+          <div className="flex items-center gap-8">
+
+            {/* Logo Clash Royale: Mantemos o aumento para compensar a borda transparente */}
+            <img
+              src="https://store.supercell.com/_next/static/media/logo.212723e6.png"
+              alt="Clash Royale"
+              className="h-10 w-auto object-contain scale-150 transform"
+              referrerPolicy="no-referrer"
+            />
+
+            {/* Logo Burger King: Aumentamos a escala para h-12 e scale-110 para igualar o peso visual */}
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Burger_King_2020_Berdai_Othmane.png"
+              alt="Burger King"
+              className="h-12 w-auto object-contain scale-110 transform"
+              referrerPolicy="no-referrer"
+            />
+
+          </div>
+        </button>
+
+
+      </div>
     </header>
   );
 }
