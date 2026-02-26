@@ -15,7 +15,7 @@ export const ERROR_MESSAGES = {
   SETTINGS_ERROR: 'Erro ao salvar configurações.',
 } as const;
 
-export const SUCCESS_MESSAGES = {
+export const SUCCESS_MESSAGES = { 
   REDEEMED: 'Resgate Concluído!',
   SETTINGS_SAVED: 'Configurações salvas com sucesso!',
   IMPORT_STARTED: 'Importação iniciada.',
