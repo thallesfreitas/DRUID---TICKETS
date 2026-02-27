@@ -32,7 +32,6 @@ export function useRecaptchaV2() {
   const widgetIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
-    console.log('SITE_KEY', SITE_KEY);
     if (!SITE_KEY) return;
 
     if (window.turnstile) {

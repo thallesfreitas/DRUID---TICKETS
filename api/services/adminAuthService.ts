@@ -33,7 +33,7 @@ export class AdminAuthService {
   async findByEmail(email: string): Promise<UserAdminRow | null> {
     const normalized = email.trim().toLowerCase();
     const rows = await this.db.execute<UserAdminRow>({
-      sql: 'SELECT id, nome, email, created_at, updated_at FROM user_admin WHERE LOWER(email) = ? LIMIT 1',
+      sql: 'SELECT id, nome, email, created_at, updated_at FROM user_admin WHERE LOWER(email) = $1 LIMIT 1',
       args: [normalized],
     });
     return rows[0] || null;
@@ -44,9 +44,9 @@ export class AdminAuthService {
     const normalized = email.trim().toLowerCase();
     const code = Array.from({ length: CODE_LENGTH }, () => Math.floor(Math.random() * 10)).join('');
     const expiresAt = new Date(Date.now() + CODE_TTL_MINUTES * 60 * 1000);
-    const expiresStr = expiresAt.toISOString().replace('T', ' ').slice(0, 19);
+    const expiresStr = expiresAt.toISOString();
     await this.db.execute({
-      sql: 'INSERT INTO admin_login_codes (email, code, expires_at) VALUES (?, ?, ?)',
+      sql: 'INSERT INTO admin_login_codes (email, code, expires_at) VALUES ($1, $2, $3)',
       args: [normalized, code, expiresStr],
     });
     return { code, expiresAt: expiresStr };
@@ -65,7 +65,7 @@ export class AdminAuthService {
     const normalized = email.trim().toLowerCase();
     const rows = await this.db.execute<AdminLoginCodeRow>({
       sql: `SELECT id, email, code, expires_at, created_at FROM admin_login_codes
-            WHERE LOWER(email) = ? AND code = ? AND datetime(expires_at) > datetime('now') LIMIT 1`,
+            WHERE LOWER(email) = $1 AND code = $2 AND expires_at > NOW() LIMIT 1`,
       args: [normalized, trimmed],
     });
     return rows[0] || null;
@@ -73,11 +73,11 @@ export class AdminAuthService {
 
   // Invalidate code after successful use
   async deleteCode(id: number): Promise<void> {
-    await this.db.execute({ sql: 'DELETE FROM admin_login_codes WHERE id = ?', args: [id] });
+    await this.db.execute({ sql: 'DELETE FROM admin_login_codes WHERE id = $1', args: [id] });
   }
 
   // Clean expired codes (optional, can be called periodically)
   async cleanupExpiredCodes(): Promise<void> {
-    await this.db.execute({ sql: `DELETE FROM admin_login_codes WHERE datetime(expires_at) <= datetime('now')` });
+    await this.db.execute({ sql: `DELETE FROM admin_login_codes WHERE expires_at <= NOW()` });
   }
 }

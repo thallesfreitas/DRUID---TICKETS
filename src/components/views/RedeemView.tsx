@@ -15,8 +15,11 @@ export function RedeemView() {
 
   const redeem = useRedeem({ getCaptchaToken });
   const [copied, setCopied] = useState(false);
-
-  const isStarted = !redeem.settings?.start_date || new Date(redeem.settings.start_date) <= new Date();
+  // console.log('redeem.settings', redeem.settings?.start_date);
+  console.log('redeem.settings', new Date(redeem.settings?.start_date));
+  console.log('new Date()', new Date());
+  const isStarted = redeem.settings?.start_date && new Date(redeem.settings.start_date) >= new Date();
+  console.log('isStarted', isStarted);
   const isEnded = redeem.settings?.end_date && new Date(redeem.settings.end_date) < new Date();
 
   const handleRedeem = async (e: React.FormEvent) => {

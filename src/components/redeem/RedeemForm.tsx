@@ -66,7 +66,7 @@ export function RedeemForm({
     }
   }, [showTurnstile, recaptchaToken, isEnterprise, loading]);
 
-  const isDisabled = !isStarted || isEnded;
+  const isDisabled = isStarted || isEnded;
 
   const isSubmitDisabled = isEnterprise
     ? loading || isDisabled || !recaptchaReady
@@ -82,8 +82,10 @@ export function RedeemForm({
   };
 
   const getButtonText = () => {
+    console.log('start', isStarted);
+    console.log('start', startDate);
     if (isEnded) return 'RESGATES ENCERRADOS';
-    if (!isStarted) {
+    if (isStarted) {
       if (startDate) return `INÍCIO EM ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
       return 'Aguarde o início';
     }

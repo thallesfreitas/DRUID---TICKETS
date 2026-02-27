@@ -1,10 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import http from "http";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createApp } from "./api/createApp.ts";
+import { createApp } from "./api/createApp.js";
 
 console.log("Starting server process...");
 
@@ -13,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   console.log("Initializing startServer...");
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || "3000", 10);
   const { app } = await createApp();
 
   // Criar servidor HTTP manualmente para compartilhar com Vite HMR
@@ -21,6 +20,7 @@ async function startServer() {
 
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting Vite in middleware mode...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: {
         middlewareMode: true,

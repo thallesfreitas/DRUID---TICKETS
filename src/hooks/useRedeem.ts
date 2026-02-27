@@ -26,7 +26,7 @@ export interface UseRedeemState {
   successData: RedeemResult | null;
   loading: boolean;
   error: string | null;
-  handleRedeem: (e: React.FormEvent) => Promise<void>;
+  handleRedeem: (e: React.FormEvent) => Promise<void>;c
   resetSuccess: () => void;
 }
 

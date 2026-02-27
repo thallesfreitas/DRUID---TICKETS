@@ -23,8 +23,17 @@ services:
       # reCAPTCHA (v2 ou enterprise, controlado por RECAPTCHA_MODE)
       - TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}
       - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
+      # PostgreSQL
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-promocode}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-promocode}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     volumes:
       # Hot-reload: monitora mudanças no código
@@ -86,50 +95,48 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
 
-  # ===== Postgres (Opcional, para substituir SQLite em produção) =====
-  # postgres:
-  #   image: postgres:16-alpine
-  #   container_name: promocode-postgres
-  #   environment:
-  #     - POSTGRES_DB=${DB_NAME:-promocode}
-  #     - POSTGRES_USER=${DB_USER:-postgres}
-  #     - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - promocode-network
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  # ===== PostgreSQL =====
+  postgres:
+    image: postgres:16-alpine
+    container_name: promocode-postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-promocode}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - promocode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # ===== PgAdmin (Opcional, para gerenciar Postgres) =====
-  # pgadmin:
-  #   image: dpage/pgadmin4:latest
-  #   container_name: promocode-pgadmin
-  #   environment:
-  #     - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@example.com}
-  #     - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
-  #   ports:
-  #     - "5050:80"
-  #   networks:
-  #     - promocode-network
-  #   depends_on:
-  #     - postgres
-  #   restart: unless-stopped
+  # ===== PgAdmin (Interface web para gerenciar Postgres) =====
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: promocode-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@example.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    networks:
+      - promocode-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   redis-data:
     driver: local
-  # sqlite-data não é mais usado: SQLite está em ./data (bind mount) para acesso ao vivo
-  # sqlite-data:
-  #   driver: local
-  # postgres-data:
-  #   driver: local
+  postgres-data:
+    driver: local
 
 networks:
   promocode-network:

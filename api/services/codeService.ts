@@ -64,7 +64,8 @@ export class CodeService {
       );
     }
 
-    const total = countResult[0]?.count || 0;
+    // pg retorna COUNT(*) como string (bigint), precisa converter
+    const total = Number(countResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -76,19 +77,19 @@ export class CodeService {
   }
 
   /**
-   * Insere múltiplos códigos (para CSV import)
+   * Insere múltiplos códigos (para CSV import) - PostgreSQL
    */
   async insertBatch(codes: Array<{ code: string; link: string }>): Promise<number> {
-    const statements = codes
-      .filter(c => c.code && c.link) // Remove inválidos
-      .map(c => ({
-        sql: 'INSERT OR IGNORE INTO codes (code, link) VALUES (?, ?)',
-        args: [c.code.toUpperCase(), c.link],
-      }));
+    const valid = codes.filter(c => c.code && c.link);
 
-    if (statements.length === 0) {
+    if (valid.length === 0) {
       return 0;
     }
+
+    const statements = valid.map(c => ({
+      sql: 'INSERT INTO codes (code, link) VALUES ($1, $2) ON CONFLICT (code) DO NOTHING',
+      args: [c.code.toUpperCase(), c.link],
+    }));
 
     const results = await this.db.batch(statements, 'write');
     return results.filter((r: any) => r.rowsAffected > 0).length;
@@ -101,8 +102,8 @@ export class CodeService {
     const totalResult = await this.db.execute<{ count: number }>(QUERIES.COUNT_TOTAL_CODES);
     const usedResult = await this.db.execute<{ count: number }>(QUERIES.COUNT_USED_CODES);
 
-    const total = totalResult[0]?.count || 0;
-    const used = usedResult[0]?.count || 0;
+    const total = Number(totalResult[0]?.count ?? 0);
+    const used = Number(usedResult[0]?.count ?? 0);
 
     return {
       total,

@@ -4,7 +4,7 @@
 
 import { ApiError } from '../../types/api';
 import { TIMEOUTS } from '../../constants/api';
-import { getAdminToken } from '../../lib/adminAuth';
+import { getAdminToken, clearAdminToken } from '../../lib/adminAuth';
 
 const ADMIN_AUTH_PATHS = ['/api/admin/request-code', '/api/admin/verify-code'];
 
@@ -45,6 +45,11 @@ export class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // Token expirado ou inválido: limpa e redireciona pro login
+        if (response.status === 401 && isAdminProtectedPath(path)) {
+          clearAdminToken();
+          window.dispatchEvent(new CustomEvent('auth:expired'));
+        }
         const errorMessage = data.message || data.error || 'Erro na requisição';
         throw new ApiError(errorMessage, response.status);
       }
