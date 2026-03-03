@@ -13,19 +13,20 @@ export function Header({ onLogoClick, onAdminClick, showAdminButton = false }: H
           {/* Removemos o divisor e usamos um gap generoso para separação visual clara */}
           <div className="flex items-center gap-8">
 
-            {/* Logo Clash Royale: Mantemos o aumento para compensar a borda transparente */}
-            <img
-              src="https://store.supercell.com/_next/static/media/logo.212723e6.png"
-              alt="Clash Royale"
-              className="h-10 w-auto object-contain scale-150 transform"
-              referrerPolicy="no-referrer"
-            />
 
             {/* Logo Burger King: Aumentamos a escala para h-12 e scale-110 para igualar o peso visual */}
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Burger_King_2020_Berdai_Othmane.png"
+              src="burger_king_logo.webp"
               alt="Burger King"
               className="h-12 w-auto object-contain scale-110 transform"
+              referrerPolicy="no-referrer"
+            />
+
+            {/* Logo Clash Royale: Mantemos o aumento para compensar a borda transparente */}
+            <img
+              src="clashroyale_logo.webp"
+              alt="Clash Royale"
+              className="h-10 w-auto object-contain scale-150 transform"
               referrerPolicy="no-referrer"
             />
 

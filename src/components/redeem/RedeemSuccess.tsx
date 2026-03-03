@@ -33,11 +33,11 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
       </p>
 
       {/* Reward Image */}
-      <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+      <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 shadow-sm w-full">
         <img
-          src="https://picsum.photos/seed/reward/600/300"
+          src="clashroyale_resgate.webp"
           alt="Prêmio"
-          className="w-full h-40 object-cover"
+          className="min-w-full h-auto object-cover"
           referrerPolicy="no-referrer"
         />
       </div>

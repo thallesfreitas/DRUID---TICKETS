@@ -8,16 +8,11 @@ coverage/
 !.env.example
 .local
 TECHNICAL_SCOPE.md
-./TECHNICAL_SCOPE.mdail
+./TECHNICAL_SCOPE.md
 .vercel
-promo.db
-data/
 TECHNICAL_SCOPE.md
 migracao.sql
 
-boraajudarwork-1682613145005-bc9cdaa0a06c.json
-gcloud-credentials.json
+
 ./claude
 /scripts
-SETUP-COMPLETO.md
-gcloud-credentials.json
