@@ -84,9 +84,9 @@ export function RedeemForm({
   const getButtonText = () => {
     console.log('start', isStarted);
     console.log('start', startDate);
-    if (isEnded) return 'RESGATES ENCERRADOS';
+    if (isEnded) return 'Campanha finalizada';
     if (isStarted) {
-      if (startDate) return `INÍCIO EM ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
+      if (startDate) return `Início em ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
       return 'Aguarde o início';
     }
     return loading ? 'Processando...' : 'Validar Código';
@@ -96,7 +96,7 @@ export function RedeemForm({
     <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Resgatar Código
+          Resgate seus baús das chamas gélidas
         </h2>
         <p className="text-slate-500 mt-2">
           Insira o código impresso no cupom fiscal de sua compra no BK para ter acesso ao prêmio único e exclusivo.
@@ -118,7 +118,7 @@ export function RedeemForm({
         {/* Code Input */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
-            Código Promocional
+            Código impresso no cupom fiscal
           </label>
           <input
             type="text"

@@ -28,7 +28,7 @@ export function MainApp() {
   return (
     <div className="min-h-screen bg-[#1481d8] flex flex-col font-sans text-slate-900">
       <Header showAdminButton={false} />
-      <main id="main-content" className="flex-grow flex flex-col items-center justify-center p-6 max-w-4xl mx-auto w-full">
+      <main id="main-content" className="flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full">
         <ViewRouter view={view} setView={setView} />
       </main>
       <Footer setView={setView} />

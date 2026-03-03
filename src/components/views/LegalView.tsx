@@ -20,12 +20,12 @@ export function LegalView({ title, content, onBack }: LegalViewProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-[500px]:mt-24"
+      className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 mt-[150px] max-[500px]:mt-[100px] h-[70vh] max-[500px]:h-[65vh] overflow-y-auto "
     >
       <h2 className="text-3xl font-black text-slate-900 mb-6">{title}</h2>
 
       {typeof content === 'string' ? (
-        <div className="prose prose-slate max-w-none text-slate-600 text-sm space-y-4">
+        <div className="prose prose-slate max-w-none text-slate-600 text-sm ">
           {content.split('\n').map((line, idx) => (
             <p key={idx}>{line}</p>
           ))}

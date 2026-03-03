@@ -29,7 +29,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
       {/* Success Title */}
       <h2 className="text-2xl font-extrabold text-slate-900">Resgate Concluído!</h2>
       <p className="text-slate-500 mt-2 mb-6">
-        Seu benefício exclusivo foi liberado com sucesso.
+        Seus baús das chamas gélidas foram liberados!
       </p>
 
       {/* Reward Image */}
@@ -55,7 +55,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
             className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-orange-100"
           >
             <ExternalLink className='max-[360px]:w-4 max-[360px]:h-4' size={18} />
-            <span className='max-[360px]:text-sm'>Acessar Prêmio</span>
+            <span className='max-[360px]:text-sm'>Acessar baús das chamas gélidas</span>
           </a>
 
           {/* Copy and WhatsApp Buttons */}

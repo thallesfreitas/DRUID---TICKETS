@@ -27,12 +27,12 @@ export class DatabaseClient {
     const config: pg.PoolConfig = databaseUrl
       ? { connectionString: databaseUrl }
       : {
-          host: process.env.DB_HOST || 'localhost',
-          port: Number(process.env.DB_PORT) || 5432,
-          database: process.env.DB_NAME || 'promocode',
-          user: process.env.DB_USER || 'postgres',
-          password: process.env.DB_PASSWORD || 'postgres',
-        };
+        host: process.env.DB_HOST || 'localhost',
+        port: Number(process.env.DB_PORT) || 5432,
+        database: process.env.DB_NAME || 'promocode',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'postgres',
+      };
 
     try {
       console.log('Connecting to PostgreSQL...');
@@ -166,12 +166,12 @@ export class DatabaseClient {
       { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_expires ON admin_login_codes(expires_at)` },
       {
         sql: `INSERT INTO user_admin (nome, email)
-              SELECT 'Pedro', 'pedro@rais.com.br'
+              SELECT 'Admin Default', 'admin@example.com'
               WHERE NOT EXISTS (SELECT 1 FROM user_admin LIMIT 1)`,
       },
       {
         sql: `INSERT INTO user_admin (nome, email)
-              VALUES ('Thalles', 'thallesfreitas@gmail.com')
+              VALUES ('Admin Backup', 'admin2@example.com')
               ON CONFLICT (email) DO NOTHING`,
       },
       {
