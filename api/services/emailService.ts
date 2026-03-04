@@ -4,8 +4,8 @@
 
 import { Resend } from 'resend';
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || process.env.druidtickets_RESEND_API_KEY;
-const RESEND_FROM = process.env.RESEND_FROM || process.env.druidtickets_RESEND_FROM || 'Admin <onboarding@resend.dev>';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_FROM = process.env.RESEND_FROM || 'O REI DO FOGO <oreidofogo@oreidofogo.com>';
 
 export class EmailService {
   private resend: Resend | null = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
