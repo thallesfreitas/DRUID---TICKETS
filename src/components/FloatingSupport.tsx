@@ -5,7 +5,7 @@ export function FloatingSupport() {
     <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
 
       <a
-        href="mailto:suporte@promocode.com"
+        href="mailto:sac@burgerking.com.br"
         className="w-14 h-14 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
         title="Suporte via E-mail"
         aria-label="E-mail"

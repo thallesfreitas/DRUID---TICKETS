@@ -9,8 +9,6 @@ import { CodeService } from '@api/services/codeService';
 import { SettingsService } from '@api/services/settingsService';
 import { StatsService } from '@api/services/statsService';
 import { ImportService } from '@api/services/importService';
-import { AdminAuthService } from '@api/services/adminAuthService';
-import { EmailService } from '@api/services/emailService';
 import { AppError } from '@api/types';
 import { HTTP_STATUS, API_DEFAULTS } from '@api/constants/api';
 import { mockCodes, mockSettings } from '@tests/fixtures';
