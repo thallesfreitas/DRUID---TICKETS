@@ -92,7 +92,9 @@ export class AdminService {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'resgates.csv';
+    const dataBrasilia = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      .replace(', ', '_');
+    a.download = `resgates_${dataBrasilia}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

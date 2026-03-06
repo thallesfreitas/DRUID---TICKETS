@@ -157,24 +157,18 @@ export function createAdminRoutes(
     '/export-redeemed',
     asyncHandler(async (req, res) => {
       const rows = await codeService.getRedeemedForExport();
-
-      // used_at vem em UTC do banco; parse como UTC e formata em Brasília (DD/MM/YYYY HH:mm:ss)
-      const formatDateBrasilia = (isoOrDateTime: string | null): string => {
-        if (!isoOrDateTime || !String(isoOrDateTime).trim()) return '';
-        const t = String(isoOrDateTime).trim();
-        const asUtc = /Z$|[+-]\d{2}:?\d{2}$/.test(t) ? t : t.replace(' ', 'T') + 'Z';
-        const s = new Date(asUtc).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        return s.replace(', ', ' ');
-      };
-
+      const filename = `resgates_${Date.now()}.csv`;
       let csv = 'codigo,link,data,ip\n';
       rows.forEach((row: any) => {
-        const dataBrasilia = formatDateBrasilia(row.used_at);
+        const dataBrasilia = new Date(row.used_at)
+          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          .replace(', ', ' - ');
+
         csv += `${row.code},${row.link},${dataBrasilia},${row.ip_address || ''}\n`;
       });
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=resgates.csv');
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
       res.send(csv);
     })
   );

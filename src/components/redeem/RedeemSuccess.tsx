@@ -22,7 +22,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
       className="bg-white p-8 rounded-3xl shadow-xl shadow-green-100/50 border border-green-100 text-center "
     >
       {/* Success Icon */}
-      <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="w-20 h-20 max-[361px]:w-12 max-[361px]:h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
         <CheckCircle2 className="w-10 h-10" />
       </div>
 
@@ -54,18 +54,21 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
             rel="noopener noreferrer"
             className="flex items-center justify-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-orange-100"
           >
-            <ExternalLink className='max-[360px]:w-4 max-[360px]:h-4' size={18} />
-            <span className='max-[360px]:text-sm'>Acessar baús das chamas gélidas</span>
+            <ExternalLink className='
+              max-[361px]:w-8 max-[361px]:h-8 max-[361px]:ml-4
+              min-[362px]:w-10 min-[362px]:h-10 min-[362px]:ml-5
+              ' size={18} />
+            <span className='max-[361px]:text-[12x] min-[362px]:text-[16px]'>Acessar baús das chamas gélidas</span>
           </a>
 
           {/* Copy and WhatsApp Buttons */}
-          <div className="grid gap-3 grid-cols-2 max-[360px]:grid-cols-1">
+          <div className="grid gap-3 grid-cols-2 max-[391px]:grid-cols-1">
             <button
               onClick={onCopy}
               className="flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3.5 rounded-xl font-bold transition-all shadow-sm"
             >
               <Copy size={18} />
-              <span className='max-[360px]:text-sm'>{copied ? 'Copiado!' : 'Copiar'}</span>
+              <span className='max-[361px]:text-sm'>{copied ? 'Copiado!' : 'Copiar'}</span>
             </button>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
@@ -76,7 +79,7 @@ export function RedeemSuccess({ link, copied, onCopy, onReset }: RedeemSuccessPr
               className="flex items-center justify-center space-x-2 bg-[#25D366] hover:bg-[#128C7E] text-white py-3.5 rounded-xl font-bold transition-all shadow-sm"
             >
               <Mail size={18} />
-              <span className='max-[360px]:text-sm'>WhatsApp</span>
+              <span className='max-[361px]:text-sm'>WhatsApp</span>
             </a>
           </div>
         </div>
