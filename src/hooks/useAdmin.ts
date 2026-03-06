@@ -21,6 +21,8 @@ export interface UseAdminState {
   setCodesPage: (page: number) => void;
   codesSearch: string;
   setCodesSearch: (search: string) => void;
+  codesStatus: 'all' | 'used' | 'available';
+  setCodesStatus: (status: 'all' | 'used' | 'available') => void;
   codesList: PaginatedCodes | null;
   codesLoading: boolean;
   fetchCodes: () => Promise<void>;
@@ -45,6 +47,7 @@ export interface UseAdminState {
 export function useAdmin(): UseAdminState {
   const [codesPage, setCodesPage] = useState(1);
   const [codesSearch, setCodesSearch] = useState('');
+  const [codesStatus, setCodesStatus] = useState<'all' | 'used' | 'available'>('all');
   const [importProgress, setImportProgress] = useState<ImportStatusResponse | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -63,8 +66,8 @@ export function useAdmin(): UseAdminState {
     loading: codesLoading,
     refetch: refetchCodes,
   } = useFetch(
-    () => adminService.getCodes(codesPage, codesSearch),
-    [codesPage, codesSearch],
+    () => adminService.getCodes(codesPage, codesSearch, codesStatus),
+    [codesPage, codesSearch, codesStatus],
     codesPage > 0
   );
 
@@ -126,6 +129,8 @@ export function useAdmin(): UseAdminState {
     setCodesPage,
     codesSearch,
     setCodesSearch,
+    codesStatus,
+    setCodesStatus,
     codesList,
     codesLoading,
     fetchCodes,

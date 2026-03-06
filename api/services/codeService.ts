@@ -39,32 +39,45 @@ export class CodeService {
     );
   }
 
-  /**
-   * Busca códigos com paginação e filtro
-   */
-  async getAll(page: number = 1, search?: string): Promise<PaginatedCodes> {
+  async getAll(page: number = 1, search?: string, status?: 'used' | 'available'): Promise<PaginatedCodes> {
     const limit = API_DEFAULTS.CODES_PAGE_SIZE;
     const offset = (page - 1) * limit;
 
-    let countResult;
-    let rowsResult;
+    const whereClauses: string[] = [];
+    const whereArgs: Array<string | boolean> = [];
 
     if (search) {
-      const searchPattern = `%${search}%`;
-      countResult = await this.db.execute<{ count: number }>(
-        { sql: QUERIES.COUNT_SEARCH_CODES, args: [searchPattern, searchPattern] }
-      );
-      rowsResult = await this.db.execute<Code>(
-        { sql: QUERIES.SEARCH_CODES, args: [searchPattern, searchPattern, limit, offset] }
-      );
-    } else {
-      countResult = await this.db.execute<{ count: number }>(QUERIES.COUNT_ALL_CODES);
-      rowsResult = await this.db.execute<Code>(
-        { sql: QUERIES.GET_ALL_CODES, args: [limit, offset] }
-      );
+      const pattern = `%${search}%`;
+      const idx = whereArgs.length + 1;
+      whereClauses.push(`(code ILIKE $${idx} OR ip_address ILIKE $${idx})`);
+      whereArgs.push(pattern);
     }
 
-    // pg retorna COUNT(*) como string (bigint), precisa converter
+    if (status === 'used' || status === 'available') {
+      const idx = whereArgs.length + 1;
+      whereClauses.push(`is_used = $${idx}`);
+      whereArgs.push(status === 'used');
+    }
+
+    const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countSql = `SELECT COUNT(*) as count FROM codes ${whereSql}`;
+    const countResult = await this.db.execute<{ count: number }>({
+      sql: countSql,
+      args: whereArgs,
+    });
+
+    const rowsSql = `
+      SELECT *
+      FROM codes
+      ${whereSql}
+      ORDER BY is_used DESC, used_at DESC NULLS LAST, id ASC
+      LIMIT $${whereArgs.length + 1}
+      OFFSET $${whereArgs.length + 2}
+    `;
+    const rowsArgs = [...whereArgs, limit, offset];
+    const rowsResult = await this.db.execute<Code>({ sql: rowsSql, args: rowsArgs });
+
     const total = Number(countResult[0]?.count ?? 0);
     const totalPages = Math.ceil(total / limit);
 

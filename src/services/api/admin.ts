@@ -44,14 +44,13 @@ export class AdminService {
   /**
    * Obtém lista de códigos
    */
-  async getCodes(page: number = 1, search: string = ''): Promise<PaginatedCodes> {
+  async getCodes(page: number = 1, search: string = '', status: 'all' | 'used' | 'available' = 'all'): Promise<PaginatedCodes> {
     const params = new URLSearchParams();
     params.append('page', String(page));
     if (search) params.append('search', search);
+    if (status && status !== 'all') params.append('status', status);
 
-    return this.client.get<PaginatedCodes>(
-      `${API_PATHS.ADMIN.CODES}?${params.toString()}`
-    );
+    return this.client.get<PaginatedCodes>(`${API_PATHS.ADMIN.CODES}?${params.toString()}`);
   }
 
   /**

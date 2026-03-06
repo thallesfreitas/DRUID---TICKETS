@@ -417,7 +417,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                 <span className="text-xs text-red-600 font-medium">{admin.exportError}</span>
               )}
             </div>
-            <form onSubmit={handleSearch} className="flex w-full md:w-auto gap-2">
+            <form onSubmit={handleSearch} className="flex w-full md:w-auto gap-2 items-center">
               <input
                 type="text"
                 placeholder="Buscar por código ou IP..."
@@ -425,6 +425,18 @@ export function AdminView({ onBack }: AdminViewProps) {
                 onChange={(e) => admin.setCodesSearch(e.target.value)}
                 className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none w-full md:w-64"
               />
+              <select
+                value={admin.codesStatus}
+                onChange={(e) => {
+                  admin.setCodesPage(1);
+                  admin.setCodesStatus(e.target.value as 'all' | 'used' | 'available');
+                }}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600"
+              >
+                <option value="all">Todos</option>
+                <option value="used">Resgatados</option>
+                <option value="available">Disponíveis</option>
+              </select>
               <button
                 type="submit"
                 className="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-bold"

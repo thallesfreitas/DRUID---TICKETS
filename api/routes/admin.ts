@@ -76,8 +76,10 @@ export function createAdminRoutes(
     asyncHandler(async (req, res) => {
       const page = parseInt(req.query.page as string) || 1;
       const search = req.query.search as string;
+      const statusQuery = (req.query.status as string | undefined)?.toLowerCase();
+      const status = statusQuery === 'used' || statusQuery === 'available' ? statusQuery : undefined;
 
-      const result = await codeService.getAll(page, search);
+      const result = await codeService.getAll(page, search, status);
       res.json(result);
     })
   );
