@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: true,
       },
-      allowedHosts: ['codepromo.ngrok.dev'],
+      allowedHosts: ['codepromo.ngrok.dev', 'uninfective-subrigidly-loriann.ngrok-free.dev'],
     },
   };
 });

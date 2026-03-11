@@ -27,6 +27,7 @@ export const QUERIES = {
       last_attempt = EXCLUDED.last_attempt,
       blocked_until = EXCLUDED.blocked_until`,
   DELETE_BRUTE_FORCE: 'DELETE FROM brute_force_attempts WHERE ip = $1',
+  DELETE_ALL_BRUTE_FORCE: 'DELETE FROM brute_force_attempts',
 
   // ===== IMPORT JOBS =====
   INSERT_IMPORT_JOB: `INSERT INTO import_jobs (id, status, total_lines, processed_lines, successful_lines, failed_lines)

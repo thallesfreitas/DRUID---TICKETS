@@ -13,13 +13,10 @@ export function RedeemView() {
   const v2 = useRecaptchaV2();
   const getCaptchaToken = async (): Promise<string> => v2.token;
 
-  const redeem = useRedeem({ getCaptchaToken });
+  const redeem = useRedeem({ getCaptchaToken, resetCaptcha: v2.resetWidget });
   const [copied, setCopied] = useState(false);
-  // console.log('redeem.settings', redeem.settings?.start_date);
-  console.log('redeem.settings', new Date(redeem.settings?.start_date));
-  console.log('new Date()', new Date());
+
   const isStarted = redeem.settings?.start_date && new Date(redeem.settings.start_date) >= new Date();
-  console.log('isStarted', isStarted);
   const isEnded = redeem.settings?.end_date && new Date(redeem.settings.end_date) < new Date();
 
   const handleRedeem = async (e: React.FormEvent) => {

@@ -54,6 +54,7 @@ export function createPublicRoutes(
     asyncHandler(async (req, res) => {
       const { code, captchaToken } = RedeemSchema.parse(req.body);
       const ip = extractIp(req);
+
       const captchaOk = await verifyRecaptcha(captchaToken, ip);
       if (!captchaOk) {
         throw new AppError(
@@ -83,13 +84,30 @@ export function createPublicRoutes(
 }
 
 /**
- * Extrai IP do cliente
+ * Extrai IP do cliente (considera proxy e x-forwarded-for).
+ * Prefere IPv4 quando houver (inclui IPv4-mapped IPv6 como ::ffff:x.y.z.w).
+ * Se o cliente for só IPv6, retorna o IPv6.
  */
-function extractIp(req: any): string {
-  return (req.ip ||
-    (req.headers['x-forwarded-for'] as string) ||
-    'unknown')
-    .toString()
-    .split(',')[0]
-    .trim();
+function extractIp(req: import('express').Request): string {
+  const raw =
+    req.ip ||
+    (req.headers['x-forwarded-for'] as string | undefined) ||
+    (req.headers['x-real-ip'] as string | undefined) ||
+    'unknown';
+  const candidates = String(raw).split(',').map((s) => s.trim());
+  for (const candidate of candidates) {
+    const ipv4 = toIPv4IfPossible(candidate);
+    if (ipv4) return ipv4;
+  }
+  return candidates[0] || 'unknown';
+}
+
+const IPv4_REGEX = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+const IPv4_MAPPED_REGEX = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i;
+
+function toIPv4IfPossible(ip: string): string | null {
+  if (IPv4_REGEX.test(ip)) return ip;
+  const mapped = ip.match(IPv4_MAPPED_REGEX);
+  if (mapped) return mapped[1];
+  return null;
 }

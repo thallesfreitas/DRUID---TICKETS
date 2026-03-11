@@ -20,10 +20,6 @@ export class PublicService {
    * Resgata um código
    */
   async redeem(code: string, captchaToken: string): Promise<RedeemResult> {
-    console.log('redeem', code, captchaToken);
-    console.log('API_PATHS.PUBLIC.REDEEM', API_PATHS.PUBLIC.REDEEM);
-    console.log('code', code);
-    console.log('captchaToken', captchaToken);
     return this.client.post<RedeemResult>(API_PATHS.PUBLIC.REDEEM, {
       code: code.toUpperCase(),
       captchaToken,

@@ -3,10 +3,9 @@
  */
 
 import { DatabaseClient } from '../database/client.js';
-import { BruteForceAttempt, AppError } from '../types/index.js';
+import { BruteForceAttempt } from '../types/index.js';
 import { QUERIES } from '../constants/queries.js';
-import { ERROR_CODES, HTTP_STATUS, API_DEFAULTS } from '../constants/api.js';
-import { ERROR_MESSAGES } from '../constants/messages.js';
+import { API_DEFAULTS } from '../constants/api.js';
 
 export class BruteForceService {
   constructor(private db: DatabaseClient) {}
@@ -77,5 +76,12 @@ export class BruteForceService {
     await this.db.execute(
       { sql: QUERIES.DELETE_BRUTE_FORCE, args: [ip] }
     );
+  }
+
+  /**
+   * Limpa todas as tentativas (uso admin, ex.: desbloquear para testes)
+   */
+  async clearAllAttempts(): Promise<void> {
+    await this.db.execute({ sql: QUERIES.DELETE_ALL_BRUTE_FORCE });
   }
 }

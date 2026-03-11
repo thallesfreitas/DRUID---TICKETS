@@ -19,6 +19,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 export async function createApp() {
   const app = express();
 
+  // Confia em X-Forwarded-For quando atrás de proxy (Docker, nginx, ngrok, etc.)
+  app.set('trust proxy', true);
+
   // ===== Middleware =====
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -56,7 +59,8 @@ export async function createApp() {
     statsService,
     importService,
     adminAuthService,
-    emailService
+    emailService,
+    bruteForceService
   );
 
   app.use('/api', publicRoutes);

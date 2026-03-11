@@ -22,7 +22,7 @@ export function HelpView({ onBack }: HelpViewProps) {
         <h3 className="font-bold text-slate-800 mb-2">Meu código não funciona, o que fazer?</h3>
         <p className="text-slate-600 text-sm">
           Verifique se digitou corretamente, respeitando maiúsculas e minúsculas. Se o
-          problema persistir, entre em contato com o suporte.
+          problema persistir, entre em contato com o <a className="text-orange-600 hover:underline" href="mailto:sac@burgerking.com.br">suporte</a>.
         </p>
       </div>
       <div>

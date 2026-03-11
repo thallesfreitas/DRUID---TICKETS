@@ -14,7 +14,7 @@ export class RedeemService {
     private codeService: CodeService,
     private settingsService: SettingsService,
     private bruteForceService: BruteForceService
-  ) {}
+  ) { }
 
   /**
    * Processa resgate de um código
@@ -40,14 +40,14 @@ export class RedeemService {
     }
 
     // 2. Verificar se IP está bloqueado
-    const { blocked, minutesRemaining } = await this.bruteForceService.isBlocked(ip);
-    if (blocked) {
-      throw new AppError(
-        ERROR_MESSAGES.IP_BLOCKED.replace('{minutes}', String(minutesRemaining)),
-        HTTP_STATUS.RATE_LIMIT,
-        ERROR_CODES.IP_BLOCKED
-      );
-    }
+    // const { blocked, minutesRemaining } = await this.bruteForceService.isBlocked(ip);
+    // if (blocked) {
+    //   throw new AppError(
+    //     ERROR_MESSAGES.IP_BLOCKED.replace('{minutes}', String(minutesRemaining)),
+    //     HTTP_STATUS.RATE_LIMIT,
+    //     ERROR_CODES.IP_BLOCKED
+    //   );
+    // }
 
     // 3. Buscar código
     const codeRecord = await this.codeService.getByCode(code);
@@ -56,13 +56,13 @@ export class RedeemService {
       // Registrar tentativa falhada
       const blockResult = await this.bruteForceService.recordFailedAttempt(ip);
 
-      if (blockResult.blocked) {
-        throw new AppError(
-          `Muitas tentativas incorretas. Seu acesso foi bloqueado temporariamente.`,
-          HTTP_STATUS.RATE_LIMIT,
-          ERROR_CODES.IP_BLOCKED
-        );
-      }
+      // if (blockResult.blocked) {
+      //   throw new AppError(
+      //     `Muitas tentativas incorretas. Seu acesso foi bloqueado temporariamente.`,
+      //     HTTP_STATUS.RATE_LIMIT,
+      //     ERROR_CODES.IP_BLOCKED
+      //   );
+      // }
 
       throw new AppError(
         ERROR_MESSAGES.INVALID_CODE,

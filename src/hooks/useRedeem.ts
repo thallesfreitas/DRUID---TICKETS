@@ -14,6 +14,7 @@ export type GetCaptchaToken = () => Promise<string>;
 
 export interface UseRedeemOptions {
   getCaptchaToken?: GetCaptchaToken;
+  resetCaptcha?: () => void;
 }
 
 export interface UseRedeemState {
@@ -26,12 +27,12 @@ export interface UseRedeemState {
   successData: RedeemResult | null;
   loading: boolean;
   error: string | null;
-  handleRedeem: (e: React.FormEvent) => Promise<void>;c
+  handleRedeem: (e: React.FormEvent) => Promise<void>;
   resetSuccess: () => void;
 }
 
 export function useRedeem(options: UseRedeemOptions = {}): UseRedeemState {
-  const { getCaptchaToken } = options;
+  const { getCaptchaToken, resetCaptcha } = options;
   const [code, setCode] = useState('');
   const [captchaVerified, setCaptchaVerified] = useState(true);
   const [successData, setSuccessData] = useState<RedeemResult | null>(null);
@@ -61,10 +62,11 @@ export function useRedeem(options: UseRedeemOptions = {}): UseRedeemState {
         setError(message);
         setCaptchaVerified(false);
       } finally {
+        resetCaptcha?.();
         setLoading(false);
       }
     },
-    [code, getCaptchaToken]
+    [code, getCaptchaToken, resetCaptcha]
   );
 
   const resetSuccess = useCallback(() => {

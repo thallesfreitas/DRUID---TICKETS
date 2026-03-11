@@ -9,6 +9,7 @@ import { StatsService } from '../services/statsService.js';
 import { ImportService } from '../services/importService.js';
 import { AdminAuthService } from '../services/adminAuthService.js';
 import { EmailService } from '../services/emailService.js';
+import { BruteForceService } from '../services/bruteForceService.js';
 import { CsvUploadSchema, SettingsSchema, AdminRequestCodeSchema, AdminVerifyCodeSchema } from '../validators/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { adminAuth, signAdminToken } from '../middleware/adminAuth.js';
@@ -21,7 +22,8 @@ export function createAdminRoutes(
   statsService: StatsService,
   importService: ImportService,
   adminAuthService: AdminAuthService,
-  emailService: EmailService
+  emailService: EmailService,
+  bruteForceService: BruteForceService
 ): Router {
   const router = Router();
 
@@ -67,6 +69,24 @@ export function createAdminRoutes(
   );
 
   router.use(adminAuth);
+
+  /**
+   * POST /api/admin/clear-brute-force - Limpa bloqueios de força bruta (por IP ou todos)
+   * Body opcional: { ip?: string }. Se ip informado, desbloqueia só esse IP; senão limpa todos.
+   */
+  router.post(
+    '/clear-brute-force',
+    asyncHandler(async (req, res) => {
+      const ip = (req.body?.ip as string)?.trim();
+      if (ip) {
+        await bruteForceService.clearAttempts(ip);
+        res.json({ success: true, message: `Bloqueio do IP ${ip} removido.` });
+      } else {
+        await bruteForceService.clearAllAttempts();
+        res.json({ success: true, message: 'Todos os bloqueios de força bruta foram removidos.' });
+      }
+    })
+  );
 
   /**
    * GET /api/admin/codes - Listar códigos com paginação

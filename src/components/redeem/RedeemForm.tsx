@@ -57,14 +57,15 @@ export function RedeemForm({
     if (!recaptchaToken) autoSubmittedRef.current = false;
   }, [recaptchaToken]);
 
-  // Após validação do Turnstile, envia o formulário automaticamente (sem segundo clique)
+  // Após validação do Turnstile, envia o formulário automaticamente (sem segundo clique).
+  // Não auto-envia se houver erro (ex.: bloqueio por tentativas), para evitar loop.
   useEffect(() => {
-    if (!showTurnstile || isEnterprise || !recaptchaToken || loading || autoSubmittedRef.current) return;
+    if (!showTurnstile || isEnterprise || !recaptchaToken || loading || autoSubmittedRef.current || error) return;
     autoSubmittedRef.current = true;
     if (formRef.current) {
       formRef.current.requestSubmit();
     }
-  }, [showTurnstile, recaptchaToken, isEnterprise, loading]);
+  }, [showTurnstile, recaptchaToken, isEnterprise, loading, error]);
 
   const isDisabled = isStarted || isEnded;
 
@@ -82,8 +83,6 @@ export function RedeemForm({
   };
 
   const getButtonText = () => {
-    console.log('start', isStarted);
-    console.log('start', startDate);
     if (isEnded) return 'Campanha finalizada';
     if (isStarted) {
       if (startDate) return `Início em ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
