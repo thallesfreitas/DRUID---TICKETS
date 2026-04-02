@@ -8,7 +8,7 @@ import { SettingsService } from '../services/settingsService.js';
 import { StatsService } from '../services/statsService.js';
 import { BruteForceService } from '../services/bruteForceService.js';
 import { RedeemService } from '../services/redeemService.js';
-import { RedeemSchema } from '../validators/index.js';
+import { RedeemSchema, RequestVerificationSchema, RedeemInfluencerSchema } from '../validators/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { AppError } from '../types/index.js';
 import { HTTP_STATUS, ERROR_CODES } from '../constants/api.js';
@@ -65,6 +65,43 @@ export function createPublicRoutes(
       }
 
       const result = await redeemService.redeem(code, ip);
+      res.json(result);
+    })
+  );
+
+  /**
+   * POST /api/request-verification - Solicita OTP por e-mail
+   */
+  router.post(
+    '/request-verification',
+    asyncHandler(async (req, res) => {
+      const { promoCode, email, captchaToken } = RequestVerificationSchema.parse(req.body);
+      const ip = extractIp(req);
+
+      const captchaOk = await verifyRecaptcha(captchaToken, ip);
+      if (!captchaOk) {
+        throw new AppError(
+          ERROR_MESSAGES.CAPTCHA_REQUIRED,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.CAPTCHA_REQUIRED
+        );
+      }
+
+      const result = await redeemService.requestVerification(promoCode, email);
+      res.json(result);
+    })
+  );
+
+  /**
+   * POST /api/redeem-influencer - Valida OTP e entrega prêmio aleatório
+   */
+  router.post(
+    '/redeem-influencer',
+    asyncHandler(async (req, res) => {
+      const { email, verificationCode } = RedeemInfluencerSchema.parse(req.body);
+      const ip = extractIp(req);
+
+      const result = await redeemService.redeemInfluencer(email, verificationCode, ip);
       res.json(result);
     })
   );

@@ -327,22 +327,22 @@ export function AdminView({ onBack }: AdminViewProps) {
                   {admin.stats.recent.map((r: any, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100"
+                      className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 md:flex-row md:items-center md:justify-between"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 shrink-0">
                           <Ticket className="text-orange-600" size={18} />
                         </div>
-                        <div>
+                        <div className="min-w-0 flex flex-col gap-0.5">
                           <p className="text-sm font-bold text-slate-900">{r.code}</p>
-                          <p className="text-xs text-slate-400 font-mono">{r.ip_address}</p>
+                          <p className="text-xs text-slate-400 font-mono break-all">{r.ip_address}</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center justify-end gap-2 md:shrink-0">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           {formatUsedAtBrasilia(r.used_at)}
                         </p>
-                        <ChevronRight size={16} className="text-slate-300 ml-auto" />
+                        <ChevronRight size={16} className="text-slate-300" />
                       </div>
                     </div>
                   ))}
@@ -484,7 +484,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                     <td className="px-6 py-4 text-xs text-slate-400">
                       {formatUsedAtBrasilia(c.used_at)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <td className="px-6 py-4 text-sm text-slate-600 break-all max-w-[180px]">
                       {c.ip_address || '-'}
                     </td>
                     <td className="px-6 py-4">

@@ -9,6 +9,12 @@ export const ERROR_MESSAGES = {
   DB_NOT_CONNECTED: 'Conexão com banco de dados não estabelecida.',
   INVALID_CODE: 'Código inválido. Verifique se digitou corretamente.',
   CODE_USED: 'Este código já foi utilizado anteriormente.',
+  EMAIL_ALREADY_REDEEMED: 'Este e-mail já realizou um resgate.',
+  INVALID_VERIFICATION_CODE: 'Código de validação inválido.',
+  VERIFICATION_CODE_EXPIRED: 'O código de validação expirou. Solicite um novo código.',
+  VERIFICATION_CODE_BLOCKED: 'Muitas tentativas com o código de validação. Solicite um novo código.',
+  VERIFICATION_EMAIL_FAILED: 'Não foi possível enviar o código de validação por e-mail.',
+  NO_CODES_AVAILABLE: 'Não há mais prêmios disponíveis no momento.',
   PROMO_NOT_STARTED: 'A promoção ainda não começou.',
   PROMO_ENDED: 'Promoção encerrada.',
   IP_BLOCKED: 'Muitas tentativas. Tente novamente em {minutes} minutos.',
@@ -20,5 +26,6 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   SETTINGS_UPDATED: 'Configurações salvas com sucesso!',
   REDEEMED: 'Código resgatado com sucesso!',
+  VERIFICATION_SENT: 'Enviamos um código de validação para o seu e-mail.',
   IMPORT_STARTED: 'Importação iniciada. Processando {lines} linhas em chunks de {chunkSize}k...',
 } as const;

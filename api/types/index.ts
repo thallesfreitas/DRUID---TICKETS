@@ -58,11 +58,23 @@ export interface RedeemRequest {
   captchaToken: string;
 }
 
+export interface RequestVerificationRequest {
+  email: string;
+  captchaToken?: string;
+}
+
+export interface RedeemInfluencerRequest {
+  email: string;
+  verificationCode: string;
+}
+
 export interface RedeemResponse {
   success?: boolean;
   link?: string;
   error?: string;
   message?: string;
+  email?: string;
+  expiresAt?: string;
 }
 
 export interface SettingsData {
@@ -99,6 +111,21 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+export interface EmailRedemption {
+  id: number;
+  email: string;
+  code_id: number;
+  redeemed_at: string;
+}
+
+export interface VerificationCode {
+  email: string;
+  verification_code: string;
+  expires_at: string;
+  attempts: number;
+  created_at?: string;
 }
 
 export class AppError extends Error {

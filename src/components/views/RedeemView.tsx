@@ -16,12 +16,21 @@ export function RedeemView() {
   const redeem = useRedeem({ getCaptchaToken, resetCaptcha: v2.resetWidget });
   const [copied, setCopied] = useState(false);
 
-  const isStarted = redeem.settings?.start_date && new Date(redeem.settings.start_date) >= new Date();
-  const isEnded = redeem.settings?.end_date && new Date(redeem.settings.end_date) < new Date();
+  const hasNotStarted = Boolean(
+    redeem.settings?.start_date && new Date(redeem.settings.start_date) >= new Date()
+  );
+  const hasEnded = Boolean(
+    redeem.settings?.end_date && new Date(redeem.settings.end_date) < new Date()
+  );
 
-  const handleRedeem = async (e: React.FormEvent) => {
+  const handleRequestVerification = async (e: React.FormEvent) => {
     e.preventDefault();
-    await redeem.handleRedeem(e);
+    await redeem.handleRequestVerification(e);
+  };
+
+  const handleRedeemPrize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await redeem.handleRedeemPrize(e);
   };
 
   const handleCopy = () => {
@@ -60,14 +69,22 @@ export function RedeemView() {
       className="w-full max-w-md pt-24"
     >
       <RedeemForm
-        code={redeem.code}
+        step={redeem.step}
+        promoCode={redeem.promoCode}
+        email={redeem.email}
+        verificationCode={redeem.verificationCode}
+        verificationEmail={redeem.verificationEmail}
         loading={redeem.loading}
         error={redeem.error}
-        isStarted={isStarted}
-        isEnded={isEnded}
+        hasNotStarted={hasNotStarted}
+        hasEnded={hasEnded}
         startDate={redeem.settings?.start_date}
-        onSubmit={handleRedeem}
-        onChange={redeem.setCode}
+        onRequestVerification={handleRequestVerification}
+        onRedeemPrize={handleRedeemPrize}
+        onPromoCodeChange={redeem.setPromoCode}
+        onEmailChange={redeem.setEmail}
+        onVerificationCodeChange={redeem.setVerificationCode}
+        onBack={redeem.goToIdentifyStep}
         recaptchaMode="v2"
         recaptchaReady={v2.ready}
         recaptchaToken={v2.token}

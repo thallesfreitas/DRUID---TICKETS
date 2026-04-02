@@ -1,36 +1,51 @@
 /**
- * RedeemForm Component
- * Responsible for rendering the code redemption form
- * Integrado com verificação humana via Turnstile/recaptcha hooks
+ * RedeemForm - Fluxo público de resgate em duas etapas
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Loader2, MailCheck } from 'lucide-react';
+import { RedeemStep } from '@/types/api';
 
 interface RedeemFormProps {
-  code: string;
+  step: RedeemStep;
+  promoCode: string;
+  email: string;
+  verificationCode: string;
+  verificationEmail: string;
   loading: boolean;
   error: string | null;
-  isStarted: boolean;
-  isEnded: boolean;
+  hasNotStarted: boolean;
+  hasEnded: boolean;
   startDate?: string;
-  onSubmit: (e: React.FormEvent) => void;
-  onChange: (code: string) => void;
+  onRequestVerification: (e: React.FormEvent) => void;
+  onRedeemPrize: (e: React.FormEvent) => void;
+  onPromoCodeChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onVerificationCodeChange: (value: string) => void;
+  onBack: () => void;
   recaptchaMode: string;
   recaptchaReady: boolean;
-  recaptchaToken: string;        // token do v2 (vazio no enterprise)
-  onRecaptchaRender?: (containerId: string) => void; // só v2
+  recaptchaToken: string;
+  onRecaptchaRender?: (containerId: string) => void;
 }
 
 export function RedeemForm({
-  code,
+  step,
+  promoCode,
+  email,
+  verificationCode,
+  verificationEmail,
   loading,
   error,
-  isStarted,
-  isEnded,
-  onSubmit,
-  onChange,
+  hasNotStarted,
+  hasEnded,
+  onRequestVerification,
+  onRedeemPrize,
+  onPromoCodeChange,
+  onEmailChange,
+  onVerificationCodeChange,
+  onBack,
   startDate,
   recaptchaMode,
   recaptchaReady,
@@ -43,62 +58,80 @@ export function RedeemForm({
   const autoSubmittedRef = useRef(false);
   const isEnterprise = recaptchaMode === 'enterprise';
 
-  // Renderizar widget Turnstile só quando o container for exibido (após primeiro clique)
   useEffect(() => {
-    if (!showTurnstile || isEnterprise) return;
+    if (step !== 'identify') {
+      setShowTurnstile(false);
+      autoSubmittedRef.current = false;
+      renderedRef.current = false;
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== 'identify' || !showTurnstile || isEnterprise) return;
     if (recaptchaReady && !renderedRef.current && onRecaptchaRender) {
       renderedRef.current = true;
       onRecaptchaRender('recaptcha-container');
     }
-  }, [showTurnstile, recaptchaReady, onRecaptchaRender, isEnterprise]);
+  }, [step, showTurnstile, recaptchaReady, onRecaptchaRender, isEnterprise]);
 
-  // Quando o token é limpo (ex.: expirou), permite novo envio automático no próximo token
   useEffect(() => {
     if (!recaptchaToken) autoSubmittedRef.current = false;
   }, [recaptchaToken]);
 
-  // Após validação do Turnstile, envia o formulário automaticamente (sem segundo clique).
-  // Não auto-envia se houver erro (ex.: bloqueio por tentativas), para evitar loop.
   useEffect(() => {
+    if (step !== 'identify') return;
     if (!showTurnstile || isEnterprise || !recaptchaToken || loading || autoSubmittedRef.current || error) return;
     autoSubmittedRef.current = true;
-    if (formRef.current) {
-      formRef.current.requestSubmit();
-    }
-  }, [showTurnstile, recaptchaToken, isEnterprise, loading, error]);
+    formRef.current?.requestSubmit();
+  }, [step, showTurnstile, recaptchaToken, isEnterprise, loading, error]);
 
-  const isDisabled = isStarted || isEnded;
-
-  const isSubmitDisabled = isEnterprise
-    ? loading || isDisabled || !recaptchaReady
-    : loading || isDisabled || (showTurnstile ? !recaptchaToken : false);
+  const isDisabled = hasNotStarted || hasEnded;
 
   const handleSubmit = (e: React.FormEvent) => {
-    if (!showTurnstile) {
-      e.preventDefault();
-      if (code.trim()) setShowTurnstile(true);
+    if (step === 'identify') {
+      if (!showTurnstile) {
+        e.preventDefault();
+        if (promoCode.trim() && email.trim()) setShowTurnstile(true);
+        return;
+      }
+
+      onRequestVerification(e);
       return;
     }
-    onSubmit(e);
+
+    onRedeemPrize(e);
   };
 
-  const getButtonText = () => {
-    if (isEnded) return 'Campanha finalizada';
-    if (isStarted) {
-      if (startDate) return `Início em ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
+  const getPrimaryButtonText = () => {
+    if (hasEnded) return 'Campanha finalizada';
+    if (hasNotStarted) {
+      if (startDate) {
+        return `Início em ${new Date(startDate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`;
+      }
       return 'Aguarde o início';
     }
-    return loading ? 'Processando...' : 'Validar Código';
+
+    if (loading) return 'Processando...';
+    return step === 'identify' ? 'VALIDAR SEU EMAIL' : 'RESGATAR PRÊMIO';
   };
+
+  const isPrimaryDisabled =
+    loading ||
+    isDisabled ||
+    (step === 'identify'
+      ? (isEnterprise ? !recaptchaReady : (showTurnstile ? !recaptchaToken : false))
+      : verificationCode.trim().length !== 6);
 
   return (
     <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Resgate seus baús das chamas gélidas
+          Resgatar Código
         </h2>
         <p className="text-slate-500 mt-2">
-          Insira o código impresso no cupom fiscal de sua compra no BK para ter acesso ao prêmio único e exclusivo.
+          {step === 'identify'
+            ? 'Informe o código promocional oficial e valide a posse do seu e-mail para participar.'
+            : 'Enviamos um código de 6 dígitos para o e-mail informado. Digite-o abaixo para liberar seu prêmio.'}
         </p>
       </div>
 
@@ -114,57 +147,100 @@ export function RedeemForm({
           </motion.div>
         )}
 
-        {/* Code Input */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
-            Código impresso no cupom fiscal
-          </label>
-          <input
-            type="text"
-            required
-            disabled={isDisabled}
-            value={code}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="EX: PROMO2024"
-            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all outline-none font-mono tracking-widest text-lg uppercase disabled:opacity-50"
-          />
-        </div>
+        {step === 'identify' ? (
+          <>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
+                Código promocional
+              </label>
+              <input
+                type="text"
+                required
+                disabled={isDisabled}
+                value={promoCode}
+                onChange={(e) => onPromoCodeChange(e.target.value)}
+                placeholder="EX: BKCLASHPROMO2026"
+                className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all outline-none font-mono tracking-wider text-base uppercase disabled:opacity-50"
+              />
+            </div>
 
-        {/* Turnstile aparece só após o primeiro clique em Validar Código */}
-        {!isEnterprise && showTurnstile && (
-          <div className="flex items-center justify-center w-full">
-            <div id="recaptcha-container" className="cf-turnstile" data-size="compact" />
-          </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
+                Seu e-mail
+              </label>
+              <input
+                type="email"
+                required
+                disabled={isDisabled}
+                value={email}
+                onChange={(e) => onEmailChange(e.target.value)}
+                placeholder="voce@exemplo.com"
+                className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all outline-none text-base disabled:opacity-50"
+              />
+            </div>
+
+            {!isEnterprise && showTurnstile && (
+              <div className="flex items-center justify-center w-full">
+                <div id="recaptcha-container" className="cf-turnstile" data-size="compact" />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-800 flex items-start gap-3">
+              <MailCheck className="w-5 h-5 shrink-0 mt-0.5" />
+              <p>
+                Enviamos um código de 6 dígitos para <strong>{verificationEmail || email}</strong>.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">
+                Código de validação
+              </label>
+              <input
+                type="text"
+                required
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => onVerificationCodeChange(e.target.value)}
+                placeholder="000000"
+                className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all outline-none font-mono tracking-[0.4em] text-center text-lg"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-full border border-slate-200 text-slate-700 font-semibold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 hover:bg-slate-50"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Alterar dados</span>
+            </button>
+          </>
         )}
-        {/* Submit Button */}
+
         <button
           type="submit"
-          disabled={isSubmitDisabled}
+          disabled={isPrimaryDisabled}
           className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/40 transition-all flex items-center justify-center space-x-2 active:scale-95"
         >
           {loading ? (
             <Loader2 className="w-6 h-6 animate-spin" />
           ) : (
             <>
-              <span>{getButtonText()}</span>
-              {isStarted && !isEnded && <ArrowRight className="w-5 h-5" />}
+              <span>{getPrimaryButtonText()}</span>
+              {!isDisabled && <ArrowRight className="w-5 h-5" />}
             </>
           )}
         </button>
       </form>
 
       <p className="text-[11px] text-center text-slate-500 mt-6 px-4 leading-relaxed">
-        Códigos de uso único. Digite o código em letras MAIÚSCULAS, exatamente como impresso no seu cupom fiscal. Em caso de dúvidas, entre em contato com o suporte.
+        Cada e-mail pode concluir apenas um resgate. O prêmio é sorteado aleatoriamente após a validação do código enviado por e-mail.
       </p>
-      {/* {isEnterprise && (
-        <p className="text-[10px] text-center text-slate-400 mt-2 px-4">
-          Protegido por reCAPTCHA Enterprise. Aplicam-se a{' '}
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Política de Privacidade</a>
-          {' '}e os{' '}
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Termos de Serviço</a>
-          {' '}do Google.
-        </p>
-      )} */}
     </div>
   );
 }

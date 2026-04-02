@@ -7,6 +7,8 @@ export const API_PATHS = {
     HEALTH: '/api/health',
     SETTINGS: '/api/settings',
     REDEEM: '/api/redeem',
+    REQUEST_VERIFICATION: '/api/request-verification',
+    REDEEM_INFLUENCER: '/api/redeem-influencer',
     STATS: '/api/stats',
   },
   ADMIN: {

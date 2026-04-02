@@ -9,6 +9,17 @@ export const RedeemSchema = z.object({
   captchaToken: z.string().min(1, 'reCAPTCHA é obrigatório'),
 });
 
+export const RequestVerificationSchema = z.object({
+  promoCode: z.string().trim().min(1, 'Código promocional é obrigatório'),
+  email: z.string().trim().email('E-mail inválido').min(1, 'E-mail é obrigatório'),
+  captchaToken: z.string().optional().default(''),
+});
+
+export const RedeemInfluencerSchema = z.object({
+  email: z.string().trim().email('E-mail inválido').min(1, 'E-mail é obrigatório'),
+  verificationCode: z.string().trim().regex(/^\d{6}$/, 'Código de validação deve ter 6 dígitos'),
+});
+
 export const CsvUploadSchema = z.object({
   csvData: z.string().min(1, 'CSV não pode estar vazio'),
 });
@@ -32,6 +43,8 @@ export const AdminVerifyCodeSchema = z.object({
 });
 
 export type RedeemRequest = z.infer<typeof RedeemSchema>;
+export type RequestVerificationRequest = z.infer<typeof RequestVerificationSchema>;
+export type RedeemInfluencerRequest = z.infer<typeof RedeemInfluencerSchema>;
 export type CsvUploadRequest = z.infer<typeof CsvUploadSchema>;
 export type SettingsRequest = z.infer<typeof SettingsSchema>;
 export type AdminLoginRequest = z.infer<typeof AdminLoginSchema>;

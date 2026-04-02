@@ -26,97 +26,155 @@ describe('useRedeem', () => {
       error: null,
       refetch: vi.fn(),
     } as any);
-
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ link: 'https://example.com/prize' }),
-    } as Response);
   });
 
   it('starts with default state', () => {
     const { result } = renderHook(() => useRedeem());
 
-    expect(result.current.code).toBe('');
-    expect(result.current.captchaVerified).toBe(true);
+    expect(result.current.step).toBe('identify');
+    expect(result.current.promoCode).toBe('');
+    expect(result.current.email).toBe('');
+    expect(result.current.verificationCode).toBe('');
     expect(result.current.error).toBeNull();
     expect(result.current.successData).toBeNull();
     expect(result.current.loading).toBe(false);
     expect(result.current.settings).toEqual(settingsMock);
   });
 
-  it('uppercases code when setCode is called', () => {
+  it('uppercases promo code and sanitizes verification code', () => {
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setCode('promo-123');
+      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setVerificationCode('12a34567');
     });
 
-    expect(result.current.code).toBe('PROMO-123');
+    expect(result.current.promoCode).toBe('BKCLASHPROMO2026');
+    expect(result.current.verificationCode).toBe('123456');
   });
 
-  it('does not submit when code is empty', async () => {
-    const { result } = renderHook(() => useRedeem());
-
-    await act(async () => {
-      await result.current.handleRedeem(createSubmitEvent());
-    });
-
-    expect(global.fetch).not.toHaveBeenCalled();
-    expect(result.current.loading).toBe(false);
-  });
-
-  it('submits code and stores success data', async () => {
-    const { result } = renderHook(() => useRedeem());
-
-    act(() => {
-      result.current.setCode('promo-123');
-    });
-
-    await act(async () => {
-      await result.current.handleRedeem(createSubmitEvent());
-    });
-
-    await waitFor(() => {
-      expect(result.current.successData?.link).toBe('https://example.com/prize');
-    });
-    expect(result.current.error).toBeNull();
-    expect(result.current.loading).toBe(false);
-  });
-
-  it('stores error and unchecks captcha when submit fails', async () => {
+  it('requests verification and advances to otp step', async () => {
     vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      json: async () => ({ message: 'Código inválido' }),
+      ok: true,
+      status: 200,
+      json: async () => ({ email: 'player@example.com', message: 'ok' }),
     } as Response);
 
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setCode('invalid');
+      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setEmail('Player@Example.com');
     });
 
     await act(async () => {
-      await result.current.handleRedeem(createSubmitEvent());
+      await result.current.handleRequestVerification(createSubmitEvent());
     });
 
-    expect(result.current.error).toBe('Código inválido');
-    expect(result.current.captchaVerified).toBe(false);
-    expect(result.current.loading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.step).toBe('verify');
+      expect(result.current.verificationEmail).toBe('player@example.com');
+    });
   });
 
-  it('resets success state', () => {
+  it('redeems prize after otp validation', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ email: 'player@example.com', message: 'ok' }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ link: 'https://example.com/prize' }),
+      } as Response);
+
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setCode('PROMO123');
-      result.current.setCaptchaVerified(false);
+      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setEmail('player@example.com');
+    });
+
+    await act(async () => {
+      await result.current.handleRequestVerification(createSubmitEvent());
+    });
+
+    act(() => {
+      result.current.setVerificationCode('123456');
+    });
+
+    await act(async () => {
+      await result.current.handleRedeemPrize(createSubmitEvent());
+    });
+
+    await waitFor(() => {
+      expect(result.current.successData?.link).toBe('https://example.com/prize');
+    });
+  });
+
+  it('stores api errors', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ message: 'Código promocional inválido' }),
+    } as Response);
+
+    const { result } = renderHook(() => useRedeem());
+
+    act(() => {
+      result.current.setPromoCode('invalid');
+      result.current.setEmail('player@example.com');
+    });
+
+    await act(async () => {
+      await result.current.handleRequestVerification(createSubmitEvent());
+    });
+
+    expect(result.current.error).toBe('Código promocional inválido');
+    expect(result.current.step).toBe('identify');
+  });
+
+  it('returns to identify step and resets success', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ email: 'player@example.com', message: 'ok' }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ link: 'https://example.com/prize' }),
+      } as Response);
+
+    const { result } = renderHook(() => useRedeem());
+
+    act(() => {
+      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setEmail('player@example.com');
+    });
+
+    await act(async () => {
+      await result.current.handleRequestVerification(createSubmitEvent());
+    });
+
+    act(() => {
+      result.current.setVerificationCode('123456');
+      result.current.goToIdentifyStep();
+    });
+
+    expect(result.current.step).toBe('identify');
+    expect(result.current.verificationCode).toBe('');
+
+    act(() => {
       result.current.resetSuccess();
     });
 
-    expect(result.current.code).toBe('');
+    expect(result.current.promoCode).toBe('');
+    expect(result.current.email).toBe('');
+    expect(result.current.verificationEmail).toBe('');
     expect(result.current.successData).toBeNull();
-    expect(result.current.captchaVerified).toBe(true);
   });
 });

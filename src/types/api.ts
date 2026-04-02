@@ -33,11 +33,22 @@ export interface PaginatedCodes {
   totalPages: number;
 }
 
+export type RedeemStep = 'identify' | 'verify';
+
+export interface VerificationRequestResult {
+  success?: boolean;
+  message?: string;
+  email?: string;
+  expiresAt?: string;
+}
+
 export interface RedeemResult {
   success?: boolean;
   link?: string;
   error?: string;
   message?: string;
+  email?: string;
+  expiresAt?: string;
 }
 
 export interface CsvUploadResponse {

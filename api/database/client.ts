@@ -12,6 +12,10 @@ export interface QueryObject {
 
 export type QueryInput = string | QueryObject;
 
+export interface TransactionClient {
+  execute<T = any>(query: QueryInput): Promise<T[]>;
+}
+
 export class DatabaseClient {
   private pool: pg.Pool | null = null;
   private connected = false;
@@ -102,6 +106,38 @@ export class DatabaseClient {
   }
 
   /**
+   * Executa operações dentro de uma transação compartilhando a mesma conexão
+   */
+  async withTransaction<T>(callback: (client: TransactionClient) => Promise<T>): Promise<T> {
+    if (!this.pool) {
+      throw new Error('Database not connected. Call connect() first.');
+    }
+
+    const client = await this.pool.connect();
+
+    const transactionClient: TransactionClient = {
+      execute: async <R = any>(query: QueryInput): Promise<R[]> => {
+        const { text, values } = this.normalizeQuery(query);
+        const result = await client.query(text, values);
+        return (result.rows as R[]) || [];
+      },
+    };
+
+    try {
+      await client.query('BEGIN');
+      const result = await callback(transactionClient);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Transaction execution failed:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Executa schema initialization (PostgreSQL)
    */
   async initializeSchema(): Promise<void> {
@@ -162,8 +198,27 @@ export class DatabaseClient {
           created_at TIMESTAMPTZ DEFAULT NOW()
         )`,
       },
+      {
+        sql: `CREATE TABLE IF NOT EXISTS email_redemptions (
+          id SERIAL PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          code_id INTEGER NOT NULL REFERENCES codes(id),
+          redeemed_at TIMESTAMPTZ DEFAULT NOW()
+        )`,
+      },
+      {
+        sql: `CREATE TABLE IF NOT EXISTS verification_codes (
+          email TEXT PRIMARY KEY,
+          verification_code TEXT NOT NULL,
+          expires_at TIMESTAMPTZ NOT NULL,
+          attempts INTEGER DEFAULT 0,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )`,
+      },
       { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_email ON admin_login_codes(email)` },
       { sql: `CREATE INDEX IF NOT EXISTS idx_admin_login_codes_expires ON admin_login_codes(expires_at)` },
+      { sql: `CREATE INDEX IF NOT EXISTS idx_email_redemptions_code_id ON email_redemptions(code_id)` },
+      { sql: `CREATE INDEX IF NOT EXISTS idx_verification_codes_expires_at ON verification_codes(expires_at)` },
       {
         sql: `INSERT INTO user_admin (nome, email)
               SELECT 'Admin Default', 'admin@example.com'

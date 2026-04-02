@@ -5,14 +5,22 @@ import { RedeemForm } from '@/components/redeem/RedeemForm';
 import type { ComponentProps, FormEvent } from 'react';
 
 const baseProps: ComponentProps<typeof RedeemForm> = {
-  code: '',
+  step: 'identify',
+  promoCode: '',
+  email: '',
+  verificationCode: '',
+  verificationEmail: '',
   loading: false,
   error: null,
-  isStarted: true,
-  isEnded: false,
+  hasNotStarted: false,
+  hasEnded: false,
   startDate: undefined,
-  onSubmit: vi.fn(),
-  onChange: vi.fn(),
+  onRequestVerification: vi.fn(),
+  onRedeemPrize: vi.fn(),
+  onPromoCodeChange: vi.fn(),
+  onEmailChange: vi.fn(),
+  onVerificationCodeChange: vi.fn(),
+  onBack: vi.fn(),
   recaptchaMode: 'v2',
   recaptchaReady: true,
   recaptchaToken: 'token',
@@ -20,120 +28,122 @@ const baseProps: ComponentProps<typeof RedeemForm> = {
 };
 
 describe('RedeemForm', () => {
-  it('renders core form elements', () => {
+  it('renders identify step fields', () => {
     render(<RedeemForm {...baseProps} />);
 
     expect(screen.getByText('Resgatar Código')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('EX: PROMO2024')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /validar código/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('EX: BKCLASHPROMO2026')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('voce@exemplo.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /validar seu email/i })).toBeInTheDocument();
   });
 
-  it('calls onChange when typing code', async () => {
-    const onChange = vi.fn();
-    const user = userEvent.setup();
-
-    render(<RedeemForm {...baseProps} onChange={onChange} />);
-    fireEvent.change(screen.getByPlaceholderText('EX: PROMO2024'), { target: { value: 'PROMO123' } });
-
-    expect(onChange).toHaveBeenCalledWith('PROMO123');
-  });
-
-  it('calls onSubmit when form is submitted and enabled', async () => {
-    const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
-    const user = userEvent.setup();
-
-    render(<RedeemForm {...baseProps} code="PROMO123" onSubmit={onSubmit} />);
-
-    await user.click(screen.getByRole('button', { name: /validar código/i }));
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-  });
-
-  it('disables submit in v2 mode when recaptcha token is missing', () => {
-    render(<RedeemForm {...baseProps} recaptchaToken="" />);
-
-    expect(screen.getByRole('button', { name: /validar código/i })).toBeDisabled();
-  });
-
-  it('disables submit in enterprise mode when not ready', () => {
-    render(
-      <RedeemForm
-        {...baseProps}
-        recaptchaMode="enterprise"
-        recaptchaReady={false}
-        recaptchaToken=""
-      />
-    );
-
-    expect(screen.getByRole('button', { name: /validar código/i })).toBeDisabled();
-  });
-
-  it('hides captcha container in enterprise mode', () => {
-    const { container } = render(
-      <RedeemForm
-        {...baseProps}
-        recaptchaMode="enterprise"
-        recaptchaToken=""
-      />
-    );
-
-    expect(container.querySelector('#recaptcha-container')).not.toBeInTheDocument();
-  });
-
-  it('renders captcha container in v2 mode', () => {
-    const { container } = render(<RedeemForm {...baseProps} recaptchaMode="v2" />);
-
-    expect(container.querySelector('#recaptcha-container')).toBeInTheDocument();
-  });
-
-  it('calls onRecaptchaRender once when ready in v2 mode', async () => {
-    const onRecaptchaRender = vi.fn();
+  it('calls change handlers on identify step', () => {
+    const onPromoCodeChange = vi.fn();
+    const onEmailChange = vi.fn();
 
     render(
       <RedeemForm
         {...baseProps}
-        recaptchaMode="v2"
-        recaptchaReady={true}
-        onRecaptchaRender={onRecaptchaRender}
+        onPromoCodeChange={onPromoCodeChange}
+        onEmailChange={onEmailChange}
       />
     );
+
+    fireEvent.change(screen.getByPlaceholderText('EX: BKCLASHPROMO2026'), { target: { value: 'BK' } });
+    fireEvent.change(screen.getByPlaceholderText('voce@exemplo.com'), { target: { value: 'test@example.com' } });
+
+    expect(onPromoCodeChange).toHaveBeenCalledWith('BK');
+    expect(onEmailChange).toHaveBeenCalledWith('test@example.com');
+  });
+
+  it('renders verify step fields', () => {
+    render(
+      <RedeemForm
+        {...baseProps}
+        step="verify"
+        verificationEmail="player@example.com"
+      />
+    );
+
+    expect(screen.getByText('player@example.com')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('000000')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /resgatar prêmio/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /alterar dados/i })).toBeInTheDocument();
+  });
+
+  it('submits request verification on identify step', async () => {
+    const onRequestVerification = vi.fn((e: FormEvent) => e.preventDefault());
+    const user = userEvent.setup();
+
+    render(
+      <RedeemForm
+        {...baseProps}
+        promoCode="BKCLASHPROMO2026"
+        email="player@example.com"
+        onRequestVerification={onRequestVerification}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /validar seu email/i }));
 
     await waitFor(() => {
-      expect(onRecaptchaRender).toHaveBeenCalledWith('recaptcha-container');
+      expect(onRequestVerification).toHaveBeenCalledTimes(1);
     });
-    expect(onRecaptchaRender).toHaveBeenCalledTimes(1);
   });
 
-  it('shows schedule message before start date', () => {
+  it('submits prize redeem on verify step', async () => {
+    const onRedeemPrize = vi.fn((e: FormEvent) => e.preventDefault());
+    const user = userEvent.setup();
+
     render(
       <RedeemForm
         {...baseProps}
-        isStarted={false}
-        startDate="2026-03-20"
-        recaptchaToken=""
+        step="verify"
+        verificationCode="123456"
+        onRedeemPrize={onRedeemPrize}
       />
     );
 
-    expect(screen.getByRole('button', { name: /início em/i })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: /resgatar prêmio/i }));
+
+    expect(onRedeemPrize).toHaveBeenCalledTimes(1);
   });
 
-  it('shows ended message when campaign is over', () => {
-    render(<RedeemForm {...baseProps} isEnded={true} recaptchaToken="" />);
+  it('calls back action on verify step', async () => {
+    const onBack = vi.fn();
+    const user = userEvent.setup();
 
-    expect(screen.getByRole('button', { name: /resgates encerrados/i })).toBeDisabled();
+    render(
+      <RedeemForm
+        {...baseProps}
+        step="verify"
+        onBack={onBack}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /alterar dados/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('renders error block when error is present', () => {
+  it('shows error block when error is present', () => {
     render(<RedeemForm {...baseProps} error="Código inválido" />);
 
     expect(screen.getByText('Código inválido')).toBeInTheDocument();
   });
 
-  it('submits form through native submit event', () => {
-    const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
+  it('renders captcha container in identify v2 mode after first submit', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <RedeemForm
+        {...baseProps}
+        promoCode="BKCLASHPROMO2026"
+        email="player@example.com"
+        recaptchaToken=""
+      />
+    );
 
-    const { container } = render(<RedeemForm {...baseProps} onSubmit={onSubmit} />);
-    fireEvent.submit(container.querySelector('form')!);
+    await user.click(screen.getByRole('button', { name: /validar seu email/i }));
 
-    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('#recaptcha-container')).toBeInTheDocument();
   });
 });

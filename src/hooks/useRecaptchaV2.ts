@@ -30,9 +30,19 @@ export function useRecaptchaV2() {
   const [token, setToken] = useState<string>('');
   const [ready, setReady] = useState(false);
   const widgetIdRef = useRef<string | number | null>(null);
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isBypassed =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.endsWith('.ngrok-free.dev') ||
+    hostname.endsWith('.ngrok.dev');
 
   useEffect(() => {
-    if (!SITE_KEY) return;
+    if (isBypassed || !SITE_KEY) {
+      setToken('dev-bypass');
+      setReady(true);
+      return;
+    }
 
     if (window.turnstile) {
       setReady(true);
@@ -47,10 +57,11 @@ export function useRecaptchaV2() {
       setReady(true);
     };
     document.head.appendChild(script);
-  }, []);
+  }, [isBypassed]);
 
   const renderWidget = useCallback(
     (containerId: string) => {
+      if (isBypassed) return;
       if (!ready || !window.turnstile || widgetIdRef.current !== null) return;
 
       const container =
@@ -72,15 +83,20 @@ export function useRecaptchaV2() {
         console.error('Turnstile render error:', err);
       }
     },
-    [ready]
+    [isBypassed, ready]
   );
 
   const resetWidget = useCallback(() => {
+    if (isBypassed) {
+      setToken('dev-bypass');
+      return;
+    }
+
     if (window.turnstile && widgetIdRef.current !== null) {
       window.turnstile.reset(widgetIdRef.current);
       setToken('');
     }
-  }, []);
+  }, [isBypassed]);
 
   return { token, ready, renderWidget, resetWidget, siteKey: SITE_KEY };
 }

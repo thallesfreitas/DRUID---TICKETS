@@ -20,6 +20,8 @@ export const API_DEFAULTS = {
   BRUTE_FORCE_MAX_ATTEMPTS: 5,
   BRUTE_FORCE_BLOCK_DURATION_MIN: 15,
   IMPORT_POLLING_INTERVAL_MS: 100,
+  VERIFICATION_CODE_EXPIRY_MIN: 10,
+  VERIFICATION_CODE_MAX_ATTEMPTS: 5,
 } as const;
 
 export const ENDPOINT_PATHS = {
@@ -27,6 +29,8 @@ export const ENDPOINT_PATHS = {
     HEALTH: '/api/health',
     SETTINGS: '/api/settings',
     REDEEM: '/api/redeem',
+    REQUEST_VERIFICATION: '/api/request-verification',
+    REDEEM_INFLUENCER: '/api/redeem-influencer',
   },
   ADMIN: {
     LOGIN: '/api/admin/login',
@@ -46,6 +50,12 @@ export const ERROR_CODES = {
   CAPTCHA_REQUIRED: 'captcha',
   INVALID_CODE: 'invalid',
   CODE_USED: 'used',
+  EMAIL_ALREADY_REDEEMED: 'email_already_redeemed',
+  INVALID_VERIFICATION_CODE: 'invalid_verification_code',
+  VERIFICATION_CODE_EXPIRED: 'verification_code_expired',
+  VERIFICATION_CODE_BLOCKED: 'verification_code_blocked',
+  VERIFICATION_EMAIL_FAILED: 'verification_email_failed',
+  NO_CODES_AVAILABLE: 'no_codes_available',
   PROMO_NOT_STARTED: 'not_started',
   PROMO_ENDED: 'ended',
   IP_BLOCKED: 'blocked',

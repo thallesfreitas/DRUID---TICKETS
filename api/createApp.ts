@@ -41,9 +41,9 @@ export async function createApp() {
   const statsService = new StatsService(dbClient);
   const bruteForceService = new BruteForceService(dbClient);
   const importService = new ImportService(dbClient);
-  const redeemService = new RedeemService(codeService, settingsService, bruteForceService);
   const adminAuthService = new AdminAuthService(dbClient);
   const emailService = new EmailService();
+  const redeemService = new RedeemService(codeService, settingsService, bruteForceService, dbClient, emailService);
 
   // ===== Registrar rotas =====
   const publicRoutes = createPublicRoutes(

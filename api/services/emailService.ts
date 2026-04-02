@@ -10,13 +10,9 @@ const RESEND_FROM = process.env.RESEND_FROM || 'O REI DO FOGO <oreidofogo@oreido
 export class EmailService {
   private resend: Resend | null = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
-  // Sends login code to email; in dev without API key, logs code to console
-  async sendLoginCode(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
-    const subject = 'Seu código de acesso ao painel';
-    const text = `Seu código de acesso ao painel é: ${code}. Válido por 15 minutos.`;
-
+  private async sendEmail(email: string, subject: string, text: string): Promise<{ ok: boolean; error?: string }> {
     if (!this.resend) {
-      console.log('[EmailService] RESEND_API_KEY not set – login code for', email, ':', code);
+      console.log('[EmailService] RESEND_API_KEY not set – email for', email, ':', text);
       return { ok: true };
     }
 
@@ -37,5 +33,18 @@ export class EmailService {
       console.error('[EmailService] Send failed:', message);
       return { ok: false, error: message };
     }
+  }
+
+  // Sends login code to email; in dev without API key, logs code to console
+  async sendLoginCode(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
+    const subject = 'Seu código de acesso ao painel';
+    const text = `Seu código de acesso ao painel é: ${code}. Válido por 15 minutos.`;
+    return this.sendEmail(email, subject, text);
+  }
+
+  async sendVerificationCode(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
+    const subject = 'Seu código de validação do resgate';
+    const text = `Seu código de validação é: ${code}. Válido por 10 minutos.`;
+    return this.sendEmail(email, subject, text);
   }
 }
