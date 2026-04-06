@@ -32,7 +32,7 @@ describe('RedeemForm', () => {
     render(<RedeemForm {...baseProps} />);
 
     expect(screen.getByText('Resgatar Código')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('EX: BKCLASHPROMO2026')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('EX: OREIDOFOGO')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('voce@exemplo.com')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /validar seu email/i })).toBeInTheDocument();
   });
@@ -49,7 +49,7 @@ describe('RedeemForm', () => {
       />
     );
 
-    fireEvent.change(screen.getByPlaceholderText('EX: BKCLASHPROMO2026'), { target: { value: 'BK' } });
+    fireEvent.change(screen.getByPlaceholderText('EX: OREIDOFOGO'), { target: { value: 'BK' } });
     fireEvent.change(screen.getByPlaceholderText('voce@exemplo.com'), { target: { value: 'test@example.com' } });
 
     expect(onPromoCodeChange).toHaveBeenCalledWith('BK');
@@ -78,7 +78,7 @@ describe('RedeemForm', () => {
     render(
       <RedeemForm
         {...baseProps}
-        promoCode="BKCLASHPROMO2026"
+        promoCode="OREIDOFOGO"
         email="player@example.com"
         onRequestVerification={onRequestVerification}
       />
@@ -136,7 +136,7 @@ describe('RedeemForm', () => {
     const { container } = render(
       <RedeemForm
         {...baseProps}
-        promoCode="BKCLASHPROMO2026"
+        promoCode="OREIDOFOGO"
         email="player@example.com"
         recaptchaToken=""
       />

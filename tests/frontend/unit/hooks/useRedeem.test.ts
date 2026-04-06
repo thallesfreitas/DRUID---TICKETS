@@ -45,11 +45,11 @@ describe('useRedeem', () => {
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setPromoCode('OREIDOFOGO');
       result.current.setVerificationCode('12a34567');
     });
 
-    expect(result.current.promoCode).toBe('BKCLASHPROMO2026');
+    expect(result.current.promoCode).toBe('OREIDOFOGO');
     expect(result.current.verificationCode).toBe('123456');
   });
 
@@ -63,7 +63,7 @@ describe('useRedeem', () => {
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setPromoCode('OREIDOFOGO');
       result.current.setEmail('Player@Example.com');
     });
 
@@ -93,7 +93,7 @@ describe('useRedeem', () => {
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setPromoCode('OREIDOFOGO');
       result.current.setEmail('player@example.com');
     });
 
@@ -152,7 +152,7 @@ describe('useRedeem', () => {
     const { result } = renderHook(() => useRedeem());
 
     act(() => {
-      result.current.setPromoCode('bkclashpromo2026');
+      result.current.setPromoCode('OREIDOFOGO');
       result.current.setEmail('player@example.com');
     });
 

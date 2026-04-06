@@ -38,7 +38,7 @@ describe('RedeemService OTP flow', () => {
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
     const service = new RedeemService(codeService, settingsService, bruteForceService, db, emailService);
 
-    const result = await service.requestVerification('BKCLASHPROMO2026', 'Player@Example.com');
+    const result = await service.requestVerification('OREIDOFOGO', 'Player@Example.com');
 
     expect(result.success).toBe(true);
     expect(result.email).toBe('player@example.com');

@@ -55,7 +55,7 @@ describe('RedeemView', () => {
 
     vi.mocked(useRedeem).mockReturnValue({
       step: 'identify',
-      promoCode: 'BKCLASHPROMO2026',
+      promoCode: 'OREIDOFOGO',
       setPromoCode: vi.fn(),
       email: 'player@example.com',
       setEmail: vi.fn(),
@@ -86,7 +86,7 @@ describe('RedeemView', () => {
   it('renders otp step from hook state', () => {
     vi.mocked(useRedeem).mockReturnValue({
       step: 'verify',
-      promoCode: 'BKCLASHPROMO2026',
+      promoCode: 'OREIDOFOGO',
       setPromoCode: vi.fn(),
       email: 'player@example.com',
       setEmail: vi.fn(),
@@ -118,7 +118,7 @@ describe('RedeemView', () => {
 
     vi.mocked(useRedeem).mockReturnValue({
       step: 'verify',
-      promoCode: 'BKCLASHPROMO2026',
+      promoCode: 'OREIDOFOGO',
       setPromoCode: vi.fn(),
       email: 'player@example.com',
       setEmail: vi.fn(),

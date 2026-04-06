@@ -11,7 +11,7 @@ import { SettingsService } from './settingsService.js';
 import { BruteForceService } from './bruteForceService.js';
 import { EmailService } from './emailService.js';
 
-const DEFAULT_PROMO_CODE = 'BKCLASHPROMO2026';
+const DEFAULT_PROMO_CODE = 'OREIDOFOGO';
 
 interface ClaimedCodeRow {
   id: number;
@@ -25,7 +25,7 @@ export class RedeemService {
     private bruteForceService: BruteForceService,
     private db?: DatabaseClient,
     private emailService?: EmailService
-  ) {}
+  ) { }
 
   /**
    * Fluxo legado de resgate por código único
