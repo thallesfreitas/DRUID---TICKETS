@@ -220,20 +220,32 @@ export class DatabaseClient {
       { sql: `CREATE INDEX IF NOT EXISTS idx_email_redemptions_code_id ON email_redemptions(code_id)` },
       { sql: `CREATE INDEX IF NOT EXISTS idx_verification_codes_expires_at ON verification_codes(expires_at)` },
       {
+        sql: `SELECT setval(
+                pg_get_serial_sequence('user_admin', 'id')::regclass,
+                COALESCE((SELECT MAX(id) FROM user_admin), 0)
+              )`,
+      },
+      {
         sql: `INSERT INTO user_admin (nome, email)
               SELECT 'Admin Default', 'admin@example.com'
               WHERE NOT EXISTS (SELECT 1 FROM user_admin LIMIT 1)`,
       },
       {
         sql: `INSERT INTO user_admin (nome, email)
-              VALUES ('Admin Backup', 'admin2@example.com')
-              ON CONFLICT (email) DO NOTHING`,
+              SELECT 'Admin Backup', 'admin2@example.com'
+              WHERE NOT EXISTS (
+                SELECT 1 FROM user_admin WHERE email = 'admin2@example.com'
+              )`,
       },
       {
-        sql: `INSERT INTO settings (key, value) VALUES ('start_date', '') ON CONFLICT (key) DO NOTHING`,
+        sql: `INSERT INTO settings (key, value)
+              SELECT 'start_date', ''
+              WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'start_date')`,
       },
       {
-        sql: `INSERT INTO settings (key, value) VALUES ('end_date', '') ON CONFLICT (key) DO NOTHING`,
+        sql: `INSERT INTO settings (key, value)
+              SELECT 'end_date', ''
+              WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'end_date')`,
       },
     ];
 
