@@ -53,10 +53,21 @@ export const QUERIES = {
 
   // ===== EXPORT =====
   GET_REDEEMED_CODES: `
-    SELECT code, link, used_at, ip_address
-    FROM codes
-    WHERE is_used = true
-    ORDER BY used_at DESC
+    SELECT
+      c.code,
+      er.email AS redeemed_email,
+      c.link,
+      c.used_at,
+      c.ip_address,
+      er.redeemed_at,
+      (er.id IS NOT NULL) AS redeemed_by_email
+    FROM codes c
+    LEFT JOIN email_redemptions er ON er.code_id = c.id
+    WHERE c.is_used = true OR er.id IS NOT NULL
+    ORDER BY
+      (er.id IS NOT NULL) DESC,
+      COALESCE(er.redeemed_at, c.used_at) DESC NULLS LAST,
+      c.id ASC
   `,
 } as const;
 

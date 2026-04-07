@@ -17,6 +17,9 @@ export interface CodeItem {
   is_used: boolean;
   used_at: string | null;
   ip_address: string | null;
+  redeemed_by_email?: boolean;
+  redeemed_email?: string | null;
+  redeemed_at?: string | null;
 }
 
 export interface Stats {

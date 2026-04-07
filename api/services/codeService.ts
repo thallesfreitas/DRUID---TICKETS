@@ -49,29 +49,42 @@ export class CodeService {
     if (search) {
       const pattern = `%${search}%`;
       const idx = whereArgs.length + 1;
-      whereClauses.push(`(code ILIKE $${idx} OR ip_address ILIKE $${idx})`);
+      whereClauses.push(`(c.code ILIKE $${idx} OR c.ip_address ILIKE $${idx} OR er.email ILIKE $${idx})`);
       whereArgs.push(pattern);
     }
 
-    if (status === 'used' || status === 'available') {
-      const idx = whereArgs.length + 1;
-      whereClauses.push(`is_used = $${idx}`);
-      whereArgs.push(status === 'used');
+    if (status === 'used') {
+      whereClauses.push('(c.is_used = true OR er.id IS NOT NULL)');
+    } else if (status === 'available') {
+      whereClauses.push('(c.is_used = false AND er.id IS NULL)');
     }
 
     const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    const countSql = `SELECT COUNT(*) as count FROM codes ${whereSql}`;
+    const countSql = `
+      SELECT COUNT(DISTINCT c.id) as count
+      FROM codes c
+      LEFT JOIN email_redemptions er ON er.code_id = c.id
+      ${whereSql}
+    `;
     const countResult = await this.db.execute<{ count: number }>({
       sql: countSql,
       args: whereArgs,
     });
 
     const rowsSql = `
-      SELECT *
-      FROM codes
+      SELECT
+        c.*,
+        (er.id IS NOT NULL) AS redeemed_by_email,
+        er.email AS redeemed_email
+      FROM codes c
+      LEFT JOIN email_redemptions er ON er.code_id = c.id
       ${whereSql}
-      ORDER BY is_used DESC, used_at DESC NULLS LAST, id ASC
+      ORDER BY
+        (er.id IS NOT NULL) DESC,
+        c.is_used DESC,
+        COALESCE(er.redeemed_at, c.used_at) DESC NULLS LAST,
+        c.id ASC
       LIMIT $${whereArgs.length + 1}
       OFFSET $${whereArgs.length + 2}
     `;

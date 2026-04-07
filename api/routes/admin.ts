@@ -17,6 +17,12 @@ import { adminAuth, signAdminToken } from '../middleware/adminAuth.js';
 import { AppError, SettingsData } from '../types/index.js';
 import { HTTP_STATUS, API_DEFAULTS } from '../constants/api.js';
 
+function toCsvCell(value: unknown): string {
+  const raw = value == null ? '' : String(value);
+  const escaped = raw.replace(/"/g, '""');
+  return /[",\r\n]/.test(escaped) ? `"${escaped}"` : escaped;
+}
+
 export function createAdminRoutes(
   codeService: CodeService,
   settingsService: SettingsService,
@@ -195,13 +201,22 @@ export function createAdminRoutes(
     asyncHandler(async (req, res) => {
       const rows = await codeService.getRedeemedForExport();
       const filename = `resgates_${Date.now()}.csv`;
-      let csv = 'codigo,link,data,ip\n';
+      let csv = 'codigo,email,link,data,ip\n';
       rows.forEach((row: any) => {
-        const dataBrasilia = new Date(row.used_at)
-          .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-          .replace(', ', ' - ');
+        const rawDate = row.redeemed_at ?? row.used_at;
+        const dateValue = rawDate ? new Date(rawDate) : null;
+        const dataBrasilia = dateValue && !Number.isNaN(dateValue.getTime())
+          ? dateValue.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }).replace(', ', ' - ')
+          : '';
+        const email = row.redeemed_email || '-';
 
-        csv += `${row.code},${row.link},${dataBrasilia},${row.ip_address || ''}\n`;
+        csv += [
+          toCsvCell(row.code),
+          toCsvCell(email),
+          toCsvCell(row.link),
+          toCsvCell(dataBrasilia),
+          toCsvCell(row.ip_address || ''),
+        ].join(',') + '\n';
       });
 
       res.setHeader('Content-Type', 'text/csv');
