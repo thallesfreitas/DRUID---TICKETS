@@ -10,6 +10,7 @@ import { ImportService } from '../services/importService.js';
 import { AdminAuthService } from '../services/adminAuthService.js';
 import { EmailService } from '../services/emailService.js';
 import { BruteForceService } from '../services/bruteForceService.js';
+import { EmailRedemptionService } from '../services/emailRedemptionService.js';
 import { CsvUploadSchema, SettingsSchema, AdminRequestCodeSchema, AdminVerifyCodeSchema } from '../validators/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { adminAuth, signAdminToken } from '../middleware/adminAuth.js';
@@ -23,7 +24,8 @@ export function createAdminRoutes(
   importService: ImportService,
   adminAuthService: AdminAuthService,
   emailService: EmailService,
-  bruteForceService: BruteForceService
+  bruteForceService: BruteForceService,
+  emailRedemptionService: EmailRedemptionService
 ): Router {
   const router = Router();
 
@@ -100,6 +102,19 @@ export function createAdminRoutes(
       const status = statusQuery === 'used' || statusQuery === 'available' ? statusQuery : undefined;
 
       const result = await codeService.getAll(page, search, status);
+      res.json(result);
+    })
+  );
+
+  /**
+   * GET /api/admin/email-redemptions - Resgates por e-mail (OTP / influencer)
+   */
+  router.get(
+    '/email-redemptions',
+    asyncHandler(async (req, res) => {
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const search = (req.query.search as string | undefined)?.trim();
+      const result = await emailRedemptionService.getPaginated(page, search);
       res.json(result);
     })
   );

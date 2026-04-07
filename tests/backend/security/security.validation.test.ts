@@ -18,6 +18,7 @@ import { RedeemService } from '@/api/services/redeemService';
 import { ImportService } from '@/api/services/importService';
 import { AdminAuthService } from '@/api/services/adminAuthService';
 import { EmailService } from '@/api/services/emailService';
+import { EmailRedemptionService } from '@/api/services/emailRedemptionService';
 import { mockSettings, mockStats } from '@/tests/fixtures';
 import { createTestIP } from '@/tests/utils';
 
@@ -189,6 +190,10 @@ function createApp() {
     sendLoginCode: vi.fn(),
   } as unknown as EmailService;
 
+  const emailRedemptionService = {
+    getPaginated: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, totalPages: 0 }),
+  } as unknown as EmailRedemptionService;
+
   app.use(
     '/api',
     createPublicRoutes(
@@ -207,7 +212,9 @@ function createApp() {
       statsService as StatsService,
       importService as ImportService,
       adminAuthService as AdminAuthService,
-      emailService as EmailService
+      emailService as EmailService,
+      bruteForceService as BruteForceService,
+      emailRedemptionService as EmailRedemptionService
     )
   );
   app.use(errorHandler);

@@ -3,7 +3,14 @@
  */
 
 import { ApiClient } from './client';
-import { Settings, Stats, PaginatedCodes, CsvUploadResponse, ImportStatusResponse } from '../../types/api';
+import {
+  Settings,
+  Stats,
+  PaginatedCodes,
+  PaginatedEmailRedemptions,
+  CsvUploadResponse,
+  ImportStatusResponse,
+} from '../../types/api';
 import { API_PATHS } from '../../constants/api';
 import { getAdminToken } from '../../lib/adminAuth';
 
@@ -51,6 +58,16 @@ export class AdminService {
     if (status && status !== 'all') params.append('status', status);
 
     return this.client.get<PaginatedCodes>(`${API_PATHS.ADMIN.CODES}?${params.toString()}`);
+  }
+
+  async getEmailRedemptions(page: number = 1, search: string = ''): Promise<PaginatedEmailRedemptions> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    if (search.trim()) params.append('search', search.trim());
+
+    return this.client.get<PaginatedEmailRedemptions>(
+      `${API_PATHS.ADMIN.EMAIL_REDEMPTIONS}?${params.toString()}`
+    );
   }
 
   /**

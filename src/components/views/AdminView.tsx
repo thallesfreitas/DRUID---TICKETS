@@ -12,7 +12,19 @@ import { AdminService } from '@/services/api/admin';
 import { apiClient } from '@/services/api/client';
 import { API_DEFAULTS } from '@/constants/api';
 import { ImportStatusResponse, AdminSubViewType } from '@/types/api';
-import { Loader2, BarChart3, CheckCircle2, RefreshCw, History, Ticket, Upload, ExternalLink, ChevronRight, CircleAlert } from 'lucide-react';
+import {
+  Loader2,
+  BarChart3,
+  CheckCircle2,
+  RefreshCw,
+  History,
+  Ticket,
+  Upload,
+  ExternalLink,
+  ChevronRight,
+  CircleAlert,
+  Mail,
+} from 'lucide-react';
 import { DatePicker } from '@/components/DatePicker';
 
 // Converte string do banco (YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD) para YYYY-MM-DD (valor do date input)
@@ -29,6 +41,41 @@ function formatUsedAtBrasilia(usedAt: string | null | undefined): string {
   const t = usedAt.trim();
   const asUtc = /Z$|[+-]\d{2}:?\d{2}$/.test(t) ? t : t.replace(' ', 'T') + 'Z';
   return new Date(asUtc).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+function ResgatesRealizadosCard({
+  usedPhase1,
+  usedPhase2,
+}: {
+  usedPhase1: number;
+  usedPhase2: number;
+}) {
+  return (
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full">
+      <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4 shrink-0">
+        <CheckCircle2 size={24} aria-hidden />
+      </div>
+      <p className="text-slate-500 text-sm font-medium">Resgates realizados</p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="rounded-2xl bg-slate-50 border border-slate-100/80 px-3 py-3 flex flex-col items-center text-center min-w-0">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Fase 1
+          </span>
+          <span className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums leading-none tracking-tight">
+            {(usedPhase1 ?? 0).toLocaleString()}
+          </span>
+        </div>
+        <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100/80 px-3 py-3 flex flex-col items-center text-center min-w-0">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/80 mb-1">
+            Fase 2
+          </span>
+          <span className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums leading-none tracking-tight">
+            {(usedPhase2 ?? 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface AdminViewProps {
@@ -65,16 +112,22 @@ export function AdminView({ onBack }: AdminViewProps) {
         stopPolling();
         setTimeout(() => {
           if (adminSubView === 'stats') admin.fetchStats();
+          if (adminSubView === 'email_redemptions') {
+            admin.fetchStats();
+            admin.fetchEmailRedemptions();
+          }
           if (adminSubView === 'codes') admin.fetchCodes();
         }, 1000);
       }
     }
   );
 
-  // Carregar dados ao entrar na view
   useEffect(() => {
     if (adminSubView === 'stats') {
       admin.fetchStats();
+    } else if (adminSubView === 'email_redemptions') {
+      admin.fetchStats();
+      admin.fetchEmailRedemptions();
     } else {
       admin.fetchCodes();
     }
@@ -99,11 +152,16 @@ export function AdminView({ onBack }: AdminViewProps) {
     e.target.value = '';
   };
 
-  // Handle search
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     admin.setCodesPage(1);
     await admin.fetchCodes();
+  };
+
+  const handleEmailRedemptionsSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    admin.setEmailRedemptionsPage(1);
+    await admin.fetchEmailRedemptions();
   };
 
   return (
@@ -124,15 +182,27 @@ export function AdminView({ onBack }: AdminViewProps) {
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm">
             <button
+              type="button"
               onClick={() => setAdminSubView('stats' as AdminSubViewType)}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'stats'
                 ? 'bg-orange-600 text-white shadow-md'
                 : 'text-slate-500 hover:bg-slate-50'
                 }`}
             >
-              Dashboard
+              Fase 1
             </button>
             <button
+              type="button"
+              onClick={() => setAdminSubView('email_redemptions' as AdminSubViewType)}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'email_redemptions'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-50'
+                }`}
+            >
+              Fase 2
+            </button>
+            <button
+              type="button"
               onClick={() => setAdminSubView('codes' as AdminSubViewType)}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${adminSubView === 'codes'
                 ? 'bg-orange-600 text-white shadow-md'
@@ -295,15 +365,10 @@ export function AdminView({ onBack }: AdminViewProps) {
                     {admin.stats.total.toLocaleString()}
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                  <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <p className="text-slate-500 text-sm font-medium">Resgates Realizados</p>
-                  <p className="text-3xl font-black text-slate-900 mt-1">
-                    {admin.stats.used.toLocaleString()}
-                  </p>
-                </div>
+                <ResgatesRealizadosCard
+                  usedPhase1={admin.stats.used_phase1}
+                  usedPhase2={admin.stats.used_phase2}
+                />
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                   <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-4">
                     <RefreshCw size={24} />
@@ -320,7 +385,7 @@ export function AdminView({ onBack }: AdminViewProps) {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold flex items-center gap-2">
                     <History className="text-orange-600" size={20} />
-                    Resgates Recentes
+                    Resgates - Fase 1
                   </h3>
                 </div>
                 <div className="space-y-4">
@@ -352,6 +417,171 @@ export function AdminView({ onBack }: AdminViewProps) {
                     </p>
                   )}
                 </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <p className="text-slate-600 font-medium mb-2">
+                {admin.statsError || 'Não foi possível carregar as estatísticas.'}
+              </p>
+              <p className="text-slate-400 text-sm mb-4">Verifique se o servidor está em execução e tente novamente.</p>
+              <button
+                type="button"
+                onClick={() => admin.fetchStats()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-bold rounded-xl hover:bg-orange-700 transition-colors"
+              >
+                <RefreshCw size={16} />
+                Tentar novamente
+              </button>
+            </div>
+          )}
+        </>
+      ) : adminSubView === 'email_redemptions' ? (
+        <>
+          {admin.statsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <Loader2 className="w-12 h-12 text-orange-600 animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Carregando estatísticas...</p>
+            </div>
+          ) : admin.stats ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <BarChart3 size={24} />
+                  </div>
+                  <p className="text-slate-500 text-sm font-medium">Total de Códigos</p>
+                  <p className="text-3xl font-black text-slate-900 mt-1">
+                    {admin.stats.total.toLocaleString()}
+                  </p>
+                </div>
+                <ResgatesRealizadosCard
+                  usedPhase1={admin.stats.used_phase1}
+                  usedPhase2={admin.stats.used_phase2}
+                />
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                  <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-4">
+                    <RefreshCw size={24} />
+                  </div>
+                  <p className="text-slate-500 text-sm font-medium">Disponíveis</p>
+                  <p className="text-3xl font-black text-slate-900 mt-1">
+                    {admin.stats.available.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <Mail className="text-orange-600" size={20} />
+                    Resgates - Fase 2
+                  </h3>
+                  <form onSubmit={handleEmailRedemptionsSearch} className="flex w-full md:w-auto gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Buscar por e-mail ou código do prêmio..."
+                      value={admin.emailRedemptionsSearch}
+                      onChange={(e) => admin.setEmailRedemptionsSearch(e.target.value)}
+                      className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none w-full md:w-72"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-bold shrink-0"
+                    >
+                      Buscar
+                    </button>
+                  </form>
+                </div>
+
+                {admin.emailRedemptionsError && (
+                  <p className="text-sm text-red-600 font-medium mb-4">{admin.emailRedemptionsError}</p>
+                )}
+
+                <div className="relative space-y-4">
+                  {admin.emailRedemptionsLoading && !admin.emailRedemptionsList && (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Loader2 className="w-10 h-10 text-orange-600 animate-spin mb-3" />
+                      <p className="text-slate-500 text-sm font-medium">Carregando resgates...</p>
+                    </div>
+                  )}
+                  {admin.emailRedemptionsLoading && admin.emailRedemptionsList && (
+                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-2xl min-h-[120px]">
+                      <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+                    </div>
+                  )}
+                  {admin.emailRedemptionsList?.items.map((row) => (
+                    <div
+                      key={row.id}
+                      className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 shrink-0">
+                          <Mail className="text-orange-600" size={18} />
+                        </div>
+                        <div className="min-w-0 flex flex-col gap-1">
+                          <p className="text-sm font-bold text-slate-900 break-all">{row.email}</p>
+                          <p className="text-xs font-mono text-slate-700">{row.prize_code}</p>
+                          <div className="flex items-center gap-2 max-w-full">
+                            <p className="text-xs text-slate-500 truncate">{row.prize_link}</p>
+                            <a
+                              href={row.prize_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-orange-600 hover:text-orange-700 shrink-0"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 md:shrink-0">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                          {formatUsedAtBrasilia(row.redeemed_at)}
+                        </p>
+                        <ChevronRight size={16} className="text-slate-300 hidden md:block" />
+                      </div>
+                    </div>
+                  ))}
+                  {admin.emailRedemptionsList &&
+                    admin.emailRedemptionsList.items.length === 0 &&
+                    !admin.emailRedemptionsLoading && (
+                      <p className="text-center text-slate-400 py-8 italic">
+                        Nenhum resgate por e-mail registrado.
+                      </p>
+                    )}
+                </div>
+
+                {admin.emailRedemptionsList && admin.emailRedemptionsList.total > 0 && (
+                  <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2">
+                    <p className="text-xs text-slate-400 font-medium">
+                      Página {admin.emailRedemptionsPage} de {admin.emailRedemptionsList.totalPages || 1}
+                      <span className="text-slate-300 ml-1">
+                        · {API_DEFAULTS.CODES_PAGE_SIZE} itens por página
+                      </span>
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={admin.emailRedemptionsPage === 1 || admin.emailRedemptionsLoading}
+                        onClick={() => admin.setEmailRedemptionsPage(admin.emailRedemptionsPage - 1)}
+                        className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          admin.emailRedemptionsPage === admin.emailRedemptionsList.totalPages ||
+                          admin.emailRedemptionsLoading
+                        }
+                        onClick={() => admin.setEmailRedemptionsPage(admin.emailRedemptionsPage + 1)}
+                        className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold disabled:opacity-50"
+                      >
+                        Próxima
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (

@@ -42,6 +42,7 @@ export const QUERIES = {
   // ===== STATS =====
   COUNT_TOTAL_CODES: 'SELECT COUNT(*) as count FROM codes',
   COUNT_USED_CODES: 'SELECT COUNT(*) as count FROM codes WHERE is_used = true',
+  COUNT_EMAIL_REDEMPTIONS: 'SELECT COUNT(*)::bigint AS count FROM email_redemptions',
   GET_RECENT_REDEEMS: `
     SELECT code, ip_address, used_at
     FROM codes

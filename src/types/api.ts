@@ -3,7 +3,7 @@
  */
 
 export type ViewType = 'redeem' | 'admin' | 'help' | 'privacy' | 'terms';
-export type AdminSubViewType = 'stats' | 'codes';
+export type AdminSubViewType = 'stats' | 'email_redemptions' | 'codes';
 
 export interface Settings {
   start_date: string;
@@ -22,12 +22,29 @@ export interface CodeItem {
 export interface Stats {
   total: number;
   used: number;
+  used_phase1: number;
+  used_phase2: number;
   available: number;
   recent: CodeItem[];
 }
 
 export interface PaginatedCodes {
   codes: CodeItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface EmailRedemptionItem {
+  id: number;
+  email: string;
+  redeemed_at: string;
+  prize_code: string;
+  prize_link: string;
+}
+
+export interface PaginatedEmailRedemptions {
+  items: EmailRedemptionItem[];
   total: number;
   page: number;
   totalPages: number;

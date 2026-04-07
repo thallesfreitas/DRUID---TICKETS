@@ -37,6 +37,8 @@ function buildAdminMock(overrides: Partial<ReturnType<typeof useAdmin>> = {}) {
     stats: {
       total: 100,
       used: 25,
+      used_phase1: 20,
+      used_phase2: 5,
       available: 75,
       recent: [],
     },

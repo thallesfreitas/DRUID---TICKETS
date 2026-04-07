@@ -5,7 +5,7 @@
 import { useState, useCallback } from 'react';
 import { AdminService } from '../services/api/admin';
 import { apiClient } from '../services/api/client';
-import { Settings, PaginatedCodes, ImportStatusResponse } from '../types/api';
+import { Settings, PaginatedCodes, PaginatedEmailRedemptions, ImportStatusResponse } from '../types/api';
 import { useFetch } from './useFetch';
 
 const adminService = new AdminService(apiClient);
@@ -26,6 +26,15 @@ export interface UseAdminState {
   codesList: PaginatedCodes | null;
   codesLoading: boolean;
   fetchCodes: () => Promise<void>;
+
+  emailRedemptionsPage: number;
+  setEmailRedemptionsPage: (page: number) => void;
+  emailRedemptionsSearch: string;
+  setEmailRedemptionsSearch: (search: string) => void;
+  emailRedemptionsList: PaginatedEmailRedemptions | null;
+  emailRedemptionsLoading: boolean;
+  emailRedemptionsError: string | null;
+  fetchEmailRedemptions: () => Promise<void>;
 
   // Stats
   stats: any;
@@ -52,6 +61,8 @@ export function useAdmin(): UseAdminState {
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [emailRedemptionsPage, setEmailRedemptionsPage] = useState(1);
+  const [emailRedemptionsSearch, setEmailRedemptionsSearch] = useState('');
 
   // Fetch settings
   const {
@@ -79,6 +90,17 @@ export function useAdmin(): UseAdminState {
     refetch: refetchStats,
   } = useFetch(() => adminService.getStats(), [], false);
 
+  const {
+    data: emailRedemptionsList,
+    loading: emailRedemptionsLoading,
+    error: emailRedemptionsError,
+    refetch: refetchEmailRedemptions,
+  } = useFetch(
+    () => adminService.getEmailRedemptions(emailRedemptionsPage, emailRedemptionsSearch),
+    [emailRedemptionsPage, emailRedemptionsSearch],
+    true
+  );
+
   const updateSettings = useCallback(
     async (newSettings: Settings) => {
       try {
@@ -98,6 +120,10 @@ export function useAdmin(): UseAdminState {
   const fetchStats = useCallback(async () => {
     await refetchStats();
   }, [refetchStats]);
+
+  const fetchEmailRedemptions = useCallback(async () => {
+    await refetchEmailRedemptions();
+  }, [refetchEmailRedemptions]);
 
   const uploadCsv = useCallback(async (csvData: string) => {
     setImportLoading(true);
@@ -134,6 +160,14 @@ export function useAdmin(): UseAdminState {
     codesList,
     codesLoading,
     fetchCodes,
+    emailRedemptionsPage,
+    setEmailRedemptionsPage,
+    emailRedemptionsSearch,
+    setEmailRedemptionsSearch,
+    emailRedemptionsList,
+    emailRedemptionsLoading,
+    emailRedemptionsError: emailRedemptionsError ?? null,
+    fetchEmailRedemptions,
     stats,
     statsLoading,
     statsError,

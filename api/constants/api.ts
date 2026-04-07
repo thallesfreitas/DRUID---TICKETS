@@ -40,6 +40,7 @@ export const ENDPOINT_PATHS = {
     UPLOAD_CSV: '/api/admin/upload-csv',
     IMPORT_STATUS: '/api/admin/import-status',
     EXPORT_REDEEMED: '/api/admin/export-redeemed',
+    EMAIL_REDEMPTIONS: '/api/admin/email-redemptions',
   },
 } as const;
 

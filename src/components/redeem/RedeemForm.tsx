@@ -159,7 +159,7 @@ export function RedeemForm({
                 disabled={isDisabled}
                 value={promoCode}
                 onChange={(e) => onPromoCodeChange(e.target.value)}
-                placeholder="EX: OREIDOFOGO"
+                placeholder="EX: CÓDIGO"
                 className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white transition-all outline-none font-mono tracking-wider text-base uppercase disabled:opacity-50"
               />
             </div>

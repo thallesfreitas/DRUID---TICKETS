@@ -12,6 +12,7 @@ import { ImportService } from './services/importService.js';
 import { RedeemService } from './services/redeemService.js';
 import { AdminAuthService } from './services/adminAuthService.js';
 import { EmailService } from './services/emailService.js';
+import { EmailRedemptionService } from './services/emailRedemptionService.js';
 import { createPublicRoutes } from './routes/public.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -44,6 +45,7 @@ export async function createApp() {
   const adminAuthService = new AdminAuthService(dbClient);
   const emailService = new EmailService();
   const redeemService = new RedeemService(codeService, settingsService, bruteForceService, dbClient, emailService);
+  const emailRedemptionService = new EmailRedemptionService(dbClient);
 
   // ===== Registrar rotas =====
   const publicRoutes = createPublicRoutes(
@@ -60,7 +62,8 @@ export async function createApp() {
     importService,
     adminAuthService,
     emailService,
-    bruteForceService
+    bruteForceService,
+    emailRedemptionService
   );
 
   app.use('/api', publicRoutes);

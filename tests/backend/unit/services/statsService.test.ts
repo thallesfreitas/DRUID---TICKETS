@@ -21,7 +21,8 @@ describe('StatsService', () => {
     it('should return complete statistics', async () => {
       db.execute
         .mockResolvedValueOnce([{ count: 1000 }]) // total
-        .mockResolvedValueOnce([{ count: 450 }])  // used
+        .mockResolvedValueOnce([{ count: 450 }]) // used
+        .mockResolvedValueOnce([{ count: 47 }]) // phase2 (email_redemptions)
         .mockResolvedValueOnce(mockStats.active.recent); // recent
 
       const result = await service.getStats();
@@ -29,6 +30,8 @@ describe('StatsService', () => {
       expect(result).toEqual({
         total: 1000,
         used: 450,
+        used_phase1: 403,
+        used_phase2: 47,
         available: 550,
         recent: mockStats.active.recent
       });
@@ -38,15 +41,19 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([{ count: 30 }])
+        .mockResolvedValueOnce([{ count: 10 }])
         .mockResolvedValueOnce([]);
 
       const result = await service.getStats();
 
       expect(result.available).toBe(70);
+      expect(result.used_phase1).toBe(20);
+      expect(result.used_phase2).toBe(10);
     });
 
     it('should handle no codes', async () => {
       db.execute
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([]);
@@ -56,6 +63,8 @@ describe('StatsService', () => {
       expect(result).toEqual({
         total: 0,
         used: 0,
+        used_phase1: 0,
+        used_phase2: 0,
         available: 0,
         recent: []
       });
@@ -65,24 +74,30 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([{ count: 100 }])
+        .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([]);
 
       const result = await service.getStats();
 
       expect(result.available).toBe(0);
       expect(result.total).toBe(result.used);
+      expect(result.used_phase1).toBe(0);
+      expect(result.used_phase2).toBe(100);
     });
 
     it('should handle null count values', async () => {
       db.execute
         .mockResolvedValueOnce([{}]) // No count
         .mockResolvedValueOnce([{}]) // No count
-        .mockResolvedValueOnce([]);   // Recent
+        .mockResolvedValueOnce([{}]) // No count phase2
+        .mockResolvedValueOnce([]); // Recent
 
       const result = await service.getStats();
 
       expect(result.total).toBe(0);
       expect(result.used).toBe(0);
+      expect(result.used_phase1).toBe(0);
+      expect(result.used_phase2).toBe(0);
     });
 
     it('should include recent redeems', async () => {
@@ -102,6 +117,7 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([{ count: 2 }])
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce(recentCodes);
 
       const result = await service.getStats();
@@ -122,6 +138,7 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 1 }])
         .mockResolvedValueOnce([{ count: 1 }])
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce(recentWithoutIP);
 
       const result = await service.getStats();
@@ -133,12 +150,15 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 1000000 }])
         .mockResolvedValueOnce([{ count: 999999 }])
+        .mockResolvedValueOnce([{ count: 400000 }])
         .mockResolvedValueOnce([]);
 
       const result = await service.getStats();
 
       expect(result.total).toBe(1000000);
       expect(result.used).toBe(999999);
+      expect(result.used_phase1).toBe(599999);
+      expect(result.used_phase2).toBe(400000);
       expect(result.available).toBe(1);
     });
 
@@ -146,6 +166,7 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 10 }])
         .mockResolvedValueOnce([{ count: 5 }])
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([]);
 
       const result = await service.getStats();
@@ -153,15 +174,16 @@ describe('StatsService', () => {
       expect(result.recent).toEqual([]);
     });
 
-    it('should make three database calls', async () => {
+    it('should make four database calls', async () => {
       db.execute
         .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([{ count: 50 }])
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([]);
 
       await service.getStats();
 
-      expect(db.execute).toHaveBeenCalledTimes(3);
+      expect(db.execute).toHaveBeenCalledTimes(4);
     });
   });
 
@@ -190,9 +212,19 @@ describe('StatsService', () => {
       db.execute
         .mockResolvedValueOnce([{ count: 100 }])
         .mockResolvedValueOnce([{ count: 50 }])
+        .mockResolvedValueOnce([{ count: 0 }])
         .mockRejectedValueOnce(new Error('Recent error'));
 
       await expect(service.getStats()).rejects.toThrow('Recent error');
+    });
+
+    it('should fail if email redemptions count query fails', async () => {
+      db.execute
+        .mockResolvedValueOnce([{ count: 100 }])
+        .mockResolvedValueOnce([{ count: 50 }])
+        .mockRejectedValueOnce(new Error('Phase2 count error'));
+
+      await expect(service.getStats()).rejects.toThrow('Phase2 count error');
     });
   });
 });

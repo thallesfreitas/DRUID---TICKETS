@@ -6,6 +6,8 @@ export const mockStats = {
   active: {
     total: 1000,
     used: 450,
+    used_phase1: 403,
+    used_phase2: 47,
     available: 550,
     recent: [
       {
@@ -38,6 +40,8 @@ export const mockStats = {
   empty: {
     total: 0,
     used: 0,
+    used_phase1: 0,
+    used_phase2: 0,
     available: 0,
     recent: []
   },
@@ -45,6 +49,8 @@ export const mockStats = {
   almostFull: {
     total: 100,
     used: 99,
+    used_phase1: 87,
+    used_phase2: 12,
     available: 1,
     recent: Array.from({ length: 10 }, (_, i) => ({
       id: i + 1,

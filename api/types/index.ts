@@ -38,6 +38,10 @@ export interface ImportJob {
 export interface Stats {
   total: number;
   used: number;
+  /** Resgates pelo fluxo cupom único (sem linha em email_redemptions) */
+  used_phase1: number;
+  /** Resgates pelo fluxo e-mail + OTP (linhas em email_redemptions) */
+  used_phase2: number;
   available: number;
   recent: Array<{
     code: string;
@@ -48,6 +52,21 @@ export interface Stats {
 
 export interface PaginatedCodes {
   codes: Code[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface EmailRedemptionRow {
+  id: number;
+  email: string;
+  redeemed_at: string;
+  prize_code: string;
+  prize_link: string;
+}
+
+export interface PaginatedEmailRedemptions {
+  items: EmailRedemptionRow[];
   total: number;
   page: number;
   totalPages: number;

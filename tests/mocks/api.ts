@@ -40,6 +40,8 @@ export function createMockPublicService() {
     getStats: vi.fn().mockResolvedValue({
       total: 1000,
       used: 450,
+      used_phase1: 403,
+      used_phase2: 47,
       available: 550,
       recent: []
     }),

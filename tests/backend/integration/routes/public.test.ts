@@ -462,6 +462,8 @@ describe('Public Routes', () => {
       vi.mocked(statsService.getStats).mockResolvedValue({
         total: 100,
         used: 50,
+        used_phase1: 40,
+        used_phase2: 10,
         available: 50,
         recent: []
       });
@@ -475,6 +477,8 @@ describe('Public Routes', () => {
       vi.mocked(statsService.getStats).mockResolvedValue({
         total: 100,
         used: 25,
+        used_phase1: 20,
+        used_phase2: 5,
         available: 75,
         recent: []
       });
@@ -489,6 +493,8 @@ describe('Public Routes', () => {
       vi.mocked(statsService.getStats).mockResolvedValue({
         total: 100,
         used: 50,
+        used_phase1: 40,
+        used_phase2: 10,
         available: 50,
         recent: [mockCodes.valid]
       });
@@ -503,6 +509,8 @@ describe('Public Routes', () => {
       vi.mocked(statsService.getStats).mockResolvedValue({
         total: 0,
         used: 0,
+        used_phase1: 0,
+        used_phase2: 0,
         available: 0,
         recent: []
       });
@@ -517,6 +525,8 @@ describe('Public Routes', () => {
       vi.mocked(statsService.getStats).mockResolvedValue({
         total: 100,
         used: 100,
+        used_phase1: 0,
+        used_phase2: 100,
         available: 0,
         recent: []
       });

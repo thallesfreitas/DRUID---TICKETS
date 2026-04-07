@@ -68,6 +68,10 @@ describe('Admin Routes', () => {
       deleteCode: vi.fn(),
     } as any;
     const emailService = { sendLoginCode: vi.fn().mockResolvedValue({ ok: true }) } as any;
+    const bruteForceService = { clearAttempts: vi.fn(), clearAllAttempts: vi.fn() } as any;
+    const emailRedemptionService = {
+      getPaginated: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, totalPages: 0 }),
+    } as any;
 
     router = createAdminRoutes(
       codeService,
@@ -75,7 +79,9 @@ describe('Admin Routes', () => {
       statsService,
       importService,
       adminAuthService,
-      emailService
+      emailService,
+      bruteForceService,
+      emailRedemptionService
     );
   });
 
